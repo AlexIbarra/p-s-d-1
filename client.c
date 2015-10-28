@@ -13,8 +13,8 @@ int main(int argc, char **argv){
 
 	// Usage
   	if (argc != 3) {
-    	   printf("Usage: %s http://server:port message\n",argv[0]);
-    	   exit(0);
+	   printf("Usage: %s http://server:port message\n",argv[0]);
+	   exit(0);
   	}
 
 	// Init gSOAP environment
