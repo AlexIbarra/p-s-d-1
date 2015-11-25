@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope
+ xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:ims="http://tempuri.org/ims.xsd">
+ <SOAP-ENV:Body>
+  <ims:listarAmigosResponse>
+   <listaAmigos>
+    <listaUsuarios SOAP-ENC:arrayType="User[2]">
+     <item>
+      <login SOAP-ENC:arrayType="xsd:byte[2]">
+       <item>0</item>
+       <item>0</item>
+      </login>
+      <estado>0</estado>
+     </item>
+     <item>
+      <login SOAP-ENC:arrayType="xsd:byte[2]">
+       <item>0</item>
+       <item>0</item>
+      </login>
+      <estado>0</estado>
+     </item>
+    </listaUsuarios>
+    <contador>0</contador>
+   </listaAmigos>
+  </ims:listarAmigosResponse>
+ </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

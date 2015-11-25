@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="Service"
+ targetNamespace="http://tempuri.org/ims.xsd/Service.wsdl"
+ xmlns:tns="http://tempuri.org/ims.xsd/Service.wsdl"
+ xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:ims="http://tempuri.org/ims.xsd"
+ xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/"
+ xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/"
+ xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/"
+ xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/"
+ xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+<types>
+
+ <schema targetNamespace="http://tempuri.org/ims.xsd"
+  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:ims="http://tempuri.org/ims.xsd"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="unqualified"
+  attributeFormDefault="unqualified">
+  <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+  <complexType name="Message"><!-- Message -->
+
+   <sequence>
+     <element name="name" type="ims:Array20Ofbyte" minOccurs="1" maxOccurs="1" nillable="true"/><!-- Message::name -->
+     <element name="msg" type="ims:Array144Ofbyte" minOccurs="1" maxOccurs="1" nillable="true"/><!-- Message::msg -->
+   </sequence>
+  </complexType>
+  <complexType name="User"><!-- User -->
+
+   <sequence>
+     <element name="login" type="ims:Array20Ofbyte" minOccurs="1" maxOccurs="1" nillable="true"/><!-- User::login -->
+     <element name="estado" type="xsd:int" minOccurs="1" maxOccurs="1"/><!-- User::estado -->
+   </sequence>
+  </complexType>
+  <complexType name="ListaUsuarios"><!-- ListaUsuarios -->
+
+   <sequence>
+     <element name="listaUsuarios" type="ims:Array50OfUser" minOccurs="1" maxOccurs="1" nillable="true"/><!-- ListaUsuarios::listaUsuarios -->
+     <element name="contador" type="xsd:int" minOccurs="1" maxOccurs="1"/><!-- ListaUsuarios::contador -->
+   </sequence>
+  </complexType>
+  <complexType name="ListaMensajes"><!-- ListaMensajes -->
+
+   <sequence>
+     <element name="mensajes" type="ims:Array100OfMessage" minOccurs="1" maxOccurs="1" nillable="true"/><!-- ListaMensajes::mensajes -->
+     <element name="numMensajes" type="xsd:int" minOccurs="1" maxOccurs="1"/><!-- ListaMensajes::numMensajes -->
+   </sequence>
+  </complexType>
+  <complexType name="Array100OfMessage">
+   <complexContent>
+    <restriction base="SOAP-ENC:Array">
+     <attribute ref="SOAP-ENC:arrayType" WSDL:arrayType="ims:Message[]"/>
+    </restriction>
+   </complexContent>
+  </complexType>
+  <complexType name="Array50OfUser">
+   <complexContent>
+    <restriction base="SOAP-ENC:Array">
+     <attribute ref="SOAP-ENC:arrayType" WSDL:arrayType="ims:User[]"/>
+    </restriction>
+   </complexContent>
+  </complexType>
+  <complexType name="Array144Ofbyte">
+   <complexContent>
+    <restriction base="SOAP-ENC:Array">
+     <attribute ref="SOAP-ENC:arrayType" WSDL:arrayType="xsd:byte[]"/>
+    </restriction>
+   </complexContent>
+  </complexType>
+  <complexType name="Array20Ofbyte">
+   <complexContent>
+    <restriction base="SOAP-ENC:Array">
+     <attribute ref="SOAP-ENC:arrayType" WSDL:arrayType="xsd:byte[]"/>
+    </restriction>
+   </complexContent>
+  </complexType>
+  <!-- operation request element -->
+  <element name="login">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__login::login -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="loginResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__login::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="darAltaUsuario">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__darAltaUsuario::login -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="darAltaUsuarioResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__darAltaUsuario::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="darBajaUsuario">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__darBajaUsuario::login -->
+     <element name="user" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__darBajaUsuario::user -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="darBajaUsuarioResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__darBajaUsuario::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="listarAmigos">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarAmigos::login -->
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarAmigos::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="listarAmigosResponse">
+   <complexType>
+    <sequence>
+     <element name="listaAmigos" type="ims:ListaUsuarios" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarAmigos::listaAmigos -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="logout">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__logout::login -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="logoutResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__logout::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="anadirAmigo">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__anadirAmigo::login -->
+     <element name="destino" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__anadirAmigo::destino -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="anadirAmigoResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__anadirAmigo::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="tratarSolicitud">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__tratarSolicitud::login -->
+     <element name="solicitante" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__tratarSolicitud::solicitante -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="tratarSolicitudResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__tratarSolicitud::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="listarPendientes">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarPendientes::login -->
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarPendientes::result -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="listarPendientesResponse">
+   <complexType>
+    <sequence>
+     <element name="listaAmigos" type="ims:ListaUsuarios" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__listarPendientes::listaAmigos -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="enviarMensaje">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__enviarMensaje::login -->
+     <element name="destino" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__enviarMensaje::destino -->
+     <element name="msg" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__enviarMensaje::msg -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="enviarMensajeResponse">
+   <complexType>
+    <sequence>
+     <element name="resul" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__enviarMensaje::resul -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="recibirMensajes">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__recibirMensajes::login -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="recibirMensajesResponse">
+   <complexType>
+    <sequence>
+     <element name="listaMsg" type="ims:ListaMensajes" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__recibirMensajes::listaMsg -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="mensajesRecibidos">
+   <complexType>
+    <sequence>
+     <element name="login" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__mensajesRecibidos::login -->
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="mensajesRecibidosResponse">
+   <complexType>
+    <sequence>
+     <element name="result" type="xsd:int" minOccurs="0" maxOccurs="1" nillable="true"/><!-- ims__mensajesRecibidos::result -->
+    </sequence>
+   </complexType>
+  </element>
+ </schema>
+
+</types>
+
+<message name="loginRequest">
+ <part name="parameters" element="ims:login"/><!-- ims__login::ims__login -->
+</message>
+
+<message name="loginResponse">
+ <part name="parameters" element="ims:loginResponse"/>
+</message>
+
+<message name="darAltaUsuarioRequest">
+ <part name="parameters" element="ims:darAltaUsuario"/><!-- ims__darAltaUsuario::ims__darAltaUsuario -->
+</message>
+
+<message name="darAltaUsuarioResponse">
+ <part name="parameters" element="ims:darAltaUsuarioResponse"/>
+</message>
+
+<message name="darBajaUsuarioRequest">
+ <part name="parameters" element="ims:darBajaUsuario"/><!-- ims__darBajaUsuario::ims__darBajaUsuario -->
+</message>
+
+<message name="darBajaUsuarioResponse">
+ <part name="parameters" element="ims:darBajaUsuarioResponse"/>
+</message>
+
+<message name="listarAmigosRequest">
+ <part name="parameters" element="ims:listarAmigos"/><!-- ims__listarAmigos::ims__listarAmigos -->
+</message>
+
+<message name="listarAmigosResponse">
+ <part name="parameters" element="ims:listarAmigosResponse"/>
+</message>
+
+<message name="logoutRequest">
+ <part name="parameters" element="ims:logout"/><!-- ims__logout::ims__logout -->
+</message>
+
+<message name="logoutResponse">
+ <part name="parameters" element="ims:logoutResponse"/>
+</message>
+
+<message name="anadirAmigoRequest">
+ <part name="parameters" element="ims:anadirAmigo"/><!-- ims__anadirAmigo::ims__anadirAmigo -->
+</message>
+
+<message name="anadirAmigoResponse">
+ <part name="parameters" element="ims:anadirAmigoResponse"/>
+</message>
+
+<message name="tratarSolicitudRequest">
+ <part name="parameters" element="ims:tratarSolicitud"/><!-- ims__tratarSolicitud::ims__tratarSolicitud -->
+</message>
+
+<message name="tratarSolicitudResponse">
+ <part name="parameters" element="ims:tratarSolicitudResponse"/>
+</message>
+
+<message name="listarPendientesRequest">
+ <part name="parameters" element="ims:listarPendientes"/><!-- ims__listarPendientes::ims__listarPendientes -->
+</message>
+
+<message name="listarPendientesResponse">
+ <part name="parameters" element="ims:listarPendientesResponse"/>
+</message>
+
+<message name="enviarMensajeRequest">
+ <part name="parameters" element="ims:enviarMensaje"/><!-- ims__enviarMensaje::ims__enviarMensaje -->
+</message>
+
+<message name="enviarMensajeResponse">
+ <part name="parameters" element="ims:enviarMensajeResponse"/>
+</message>
+
+<message name="recibirMensajesRequest">
+ <part name="parameters" element="ims:recibirMensajes"/><!-- ims__recibirMensajes::ims__recibirMensajes -->
+</message>
+
+<message name="recibirMensajesResponse">
+ <part name="parameters" element="ims:recibirMensajesResponse"/>
+</message>
+
+<message name="mensajesRecibidosRequest">
+ <part name="parameters" element="ims:mensajesRecibidos"/><!-- ims__mensajesRecibidos::ims__mensajesRecibidos -->
+</message>
+
+<message name="mensajesRecibidosResponse">
+ <part name="parameters" element="ims:mensajesRecibidosResponse"/>
+</message>
+
+<portType name="ServicePortType">
+ <operation name="login">
+  <documentation>Service definition of function ims__login</documentation>
+  <input message="tns:loginRequest"/>
+  <output message="tns:loginResponse"/>
+ </operation>
+ <operation name="darAltaUsuario">
+  <documentation>Service definition of function ims__darAltaUsuario</documentation>
+  <input message="tns:darAltaUsuarioRequest"/>
+  <output message="tns:darAltaUsuarioResponse"/>
+ </operation>
+ <operation name="darBajaUsuario">
+  <documentation>Service definition of function ims__darBajaUsuario</documentation>
+  <input message="tns:darBajaUsuarioRequest"/>
+  <output message="tns:darBajaUsuarioResponse"/>
+ </operation>
+ <operation name="listarAmigos">
+  <documentation>Service definition of function ims__listarAmigos</documentation>
+  <input message="tns:listarAmigosRequest"/>
+  <output message="tns:listarAmigosResponse"/>
+ </operation>
+ <operation name="logout">
+  <documentation>Service definition of function ims__logout</documentation>
+  <input message="tns:logoutRequest"/>
+  <output message="tns:logoutResponse"/>
+ </operation>
+ <operation name="anadirAmigo">
+  <documentation>Service definition of function ims__anadirAmigo</documentation>
+  <input message="tns:anadirAmigoRequest"/>
+  <output message="tns:anadirAmigoResponse"/>
+ </operation>
+ <operation name="tratarSolicitud">
+  <documentation>Service definition of function ims__tratarSolicitud</documentation>
+  <input message="tns:tratarSolicitudRequest"/>
+  <output message="tns:tratarSolicitudResponse"/>
+ </operation>
+ <operation name="listarPendientes">
+  <documentation>Service definition of function ims__listarPendientes</documentation>
+  <input message="tns:listarPendientesRequest"/>
+  <output message="tns:listarPendientesResponse"/>
+ </operation>
+ <operation name="enviarMensaje">
+  <documentation>Service definition of function ims__enviarMensaje</documentation>
+  <input message="tns:enviarMensajeRequest"/>
+  <output message="tns:enviarMensajeResponse"/>
+ </operation>
+ <operation name="recibirMensajes">
+  <documentation>Service definition of function ims__recibirMensajes</documentation>
+  <input message="tns:recibirMensajesRequest"/>
+  <output message="tns:recibirMensajesResponse"/>
+ </operation>
+ <operation name="mensajesRecibidos">
+  <documentation>Service definition of function ims__mensajesRecibidos</documentation>
+  <input message="tns:mensajesRecibidosRequest"/>
+  <output message="tns:mensajesRecibidosResponse"/>
+ </operation>
+</portType>
+
+<binding name="Service" type="tns:ServicePortType">
+ <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+ <operation name="login">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="darAltaUsuario">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="darBajaUsuario">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="listarAmigos">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="logout">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="anadirAmigo">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="tratarSolicitud">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="listarPendientes">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="enviarMensaje">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="recibirMensajes">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="mensajesRecibidos">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+</binding>
+
+<service name="Service">
+ <documentation>gSOAP 2.8.10 generated service definition</documentation>
+ <port name="Service" binding="tns:Service">
+  <SOAP:address location="http://localhost:80"/>
+ </port>
+</service>
+
+</definitions>

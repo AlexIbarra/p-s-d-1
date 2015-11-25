@@ -2,6 +2,8 @@
 #include "soapH.h"
 #include "imsService.nsmap"
 
+char *user;
+
 int main(int argc, char **argv){ 
 
   int m, s;
@@ -65,6 +67,18 @@ int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
 	strcpy(myMessage->name, "aServer");	
 
 	return SOAP_OK;
+}
+
+int ims__newUser (struct User myUser, int *result) {
+	
+}
+
+int ims_comprobarUsuario(char * user, int *result) {
+	
+}
+
+int ims__deleteUser (struct User myUser, int *result) {
+
 }
 
 
