@@ -1,5 +1,11 @@
 #include "soapH.h"
 #include "imsService.nsmap"
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <signal.h>
+#include <pthread.h>
+
 
 #define DEBUG_MODE 1
 
@@ -14,7 +20,7 @@ char menu();
 int main(int argc, char **argv){
 
   struct soap soap;
-  struct Message myMsg[IMS_MAX_FRIENDS];
+  //struct Message myMsg[IMS_MAX_FRIENDS];
   char *friends[IMS_MAX_NAME_SIZE];
   char *serverURL;
   char *msg;
@@ -134,6 +140,8 @@ int gestorMenu(int op) {
 	return status;		
 }
 
+
+// Comprueba si el usuario esta dado de alta o si ya esta logueado
 int comprobarUsuario(char * name) {
 	int res;
 	
@@ -145,16 +153,16 @@ int comprobarUsuario(char * name) {
 
 int newUser() {
 	int res;
-	struct UserServer myUser;
+	//struct UserServer myUser;
 	
 	// Reservamos espacio para el nombre
-	myUser.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
+	//myUser.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
 	
 	// Copiamos el nombre de usuario recogido a la estructura
-	strcpy (myUser.name, user);
+	//strcpy (myUser.name, user);
 	
 	// Hacemos la llamada a la funcion newUser de gsoap para pasarle la info al servidor
-	soap_call_ims__newUser (&soap, serverURL, "", myUser, &res);
+	//soap_call_ims__newUser (&soap, serverURL, "", myUser, &res);
 	
 	// Check for errors...
   	if (soap.error) {

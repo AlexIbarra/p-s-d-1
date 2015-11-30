@@ -1,49 +1,250 @@
-
 #include "soapH.h"
 #include "imsService.nsmap"
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <pthread.h>
 
-char *user;
 
-int main(int argc, char **argv){ 
 
-  int m, s;
-  struct soap soap;
+// Listas globales de usuarios y mensajes
+struct UsersList userlist;
+struct MessageList messagelist;
 
-  	if (argc < 2) {
+/*### MACROS ###*/
+#define OFFLINE 0
+#define ONLINE 1
+#define DELETED -1
+void salir(int senal);
+
+
+int main(int argc, char **argv) { 
+
+	int m, s;
+	struct soap soap;
+
+	// Asigno el handler para el Ctrl + C
+   	signal(SIGINT,salir);
+
+   	// Inicializo la estructura soap
+   	soap_init(&soap);
+
+	if (argc < 2) {
     	printf("Usage: %s <port>\n",argv[0]); 
+    	soap_serve(&soap); 
+      	soap_destroy(&soap);
+      	soap_end(&soap); 
 		exit(-1); 
   	}
+  	else {
+  		soap.send_timeout = 60; 
+		soap.recv_timeout = 60; 
+		soap.accept_timeout = 3600; // server stops after 1 hour of inactivity
+		soap.max_keep_alive = 100;  // max keep-alive sequence
+		void *process_request(void*); 
+		struct soap *tsoap; 
+		pthread_t tid; 
+		int port = atoi(argv[1]); // first command-line arg is port
+		SOAP_SOCKET m, s; 
+		m = soap_bind(&soap, NULL, port, BACKLOG);
 
-	// Init environment
-  	soap_init(&soap);
+		if (!soap_valid_socket(m)){
+			soap_print_fault(&soap, stderr);
+			exit(1); 
+		}
 
-	// Bind to the specified port	
-	m = soap_bind(&soap, NULL, atoi(argv[1]), 100);
+		fprintf(stderr, "Socket connection successful %d\n", m); 
 
-	// Check result of binding		
-	if (m < 0) {
-  		soap_print_fault(&soap, stderr); exit(-1); 
-	}
+		// Cargamos lus usuarios guardados en disco
+		 loadUserList();
 
-	// Listen to next connection
-	while (1) { 
+		// Cargamos la lista de mensajes 
+		 loadMessageList();
 
-		// accept
-	  	s = soap_accept(&soap);    
+		for (;;) { 
 
-	  	if (s < 0) {
-			soap_print_fault(&soap, stderr); exit(-1);
-	  	}
+			s = soap_accept(&soap); 
+			if (!soap_valid_socket(s)) { 
+				if (soap.errnum) { 
+				   soap_print_fault(&soap, stderr); 
+				   exit(1); 
+				} 
+				fprintf(stderr, "server timed out\n"); 
+				break; 
+			}
 
-		// Execute invoked operation
-	  	soap_serve(&soap);
+			// gestiono la funcion que me pide el Cliente
+			soap_serve(&soap);
+			soap_end(&soap);
 
-		// Clean up!
-	  	soap_end(&soap);
-	}
 
-  return 0;
+			tsoap = soap_copy(&soap); 
+			if (!tsoap) 
+				break; 
+			pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)tsoap); 
+		} 
+		 
+		soap_done(&soap); 
+		return 0; 
+  	}
+
+
+ //  return 0;
 }
+
+
+
+
+
+int loadUserList() {
+
+	int numusers, i=0, j=0;
+	int friends;
+	char user[IMS_MAX_NAME_SIZE];
+
+
+	int fd = open("bbdd/users.txt",O_CREAT | O_RDONLY, 0666);
+
+	if(read(fd,&numusers,sizeof(int)) < 0)
+		printf("Error lectura de la base de datos de los usuarios\n");
+	else {
+		userlist.numusers = numusers;
+		for(i=0; i<numusers; i++) {
+
+			// Leo el nombre del primer usuario
+			read(fd,user,IMS_MAX_NAME_SIZE);
+			userlist.users[i].name = user;
+
+			// Leo el numero de amigos que tenga
+			read(fd,&friends,sizeof(int));
+			userlist.users[i].numfriends = friends;
+
+			// Leo los amigos
+			for(j=0; j<friends; j++) {
+				read(fd,user,IMS_MAX_NAME_SIZE);
+				userlist.users[i].friends[j] = user;
+				lseek(file,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
+			}
+
+			//Asignamos el estado del usuario
+			userlist.state = OFFLINE;
+		}
+	}
+	return 1;
+}
+
+
+
+int loadMessageList() {
+
+	int nummessages, i=0;
+	char msg[IMS_MAX_MSG_SIZE];
+
+
+	int fd = open("bbdd/messages.txt",O_CREAT | O_RDONLY, 0666);
+
+	if(read(fd,&nummessages,sizeof(int)) < 0)
+		printf("Error lectura de la base de datos de los mensajes\n");
+	else {
+		messagelist.nummessages = nummessages;
+		for(i=0; i<nummessages; i++) {
+
+			// Leo el nombre del emisor
+			read(fd,user,IMS_MAX_NAME_SIZE);
+			messagelist.messages[i].emisor = user;
+
+			// Leo el nombre del receptor
+			read(fd,user,IMS_MAX_NAME_SIZE);
+			messagelist.messages[i].receptor = user;
+
+			// Leo el mensaje
+			read(fd,msg,IMS_MAX_MSG_SIZE);
+			messagelist.messages[i].msg = msg;
+
+		}
+	}
+	return 1;
+}
+
+
+int checkUsers(char *name) {
+
+	int i = 0;
+
+	for(i=0; i < userlist.numusers; i++){
+		
+		if(strcmp(userlist.users[i].name,name)==0){
+			return i;
+		}
+
+	}
+	return -1;
+}
+
+int checkUsersState(char *name) {
+
+	int i = 0;
+
+	
+	if((i = chekUsers(name)) != -1){
+		return userlist.users[i].state;
+	}
+	return -1;
+}
+
+
+
+
+// Handler para la señal Cntrl + C
+void salir(int senal){
+
+	int i;
+	fflush (stdout);
+	switch(senal){
+		case SIGINT:
+			printf("Cerrando servidor...\n");
+
+			for(i = 0; i< registrados.contador ; i++){
+				if(registrados.listaUsuarios[i].estado == CONECTADO){
+					registrados.listaUsuarios[i].estado = DESCONECTADO;
+				}
+			}
+
+			guardarListaUsuarios();
+			exit(1);
+		break;
+	}
+}
+
+
+
+void *process_request(void *soap) { 
+
+   pthread_detach(pthread_self()); 
+   soap_serve((struct soap*)soap); 
+   soap_destroy((struct soap*)soap); 
+   soap_end((struct soap*)soap); 
+   soap_done((struct soap*)soap); 
+   free(soap); 
+
+   return NULL; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*###########-- FUNCIONES IMS --############*/
+
 
 int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 
@@ -69,16 +270,41 @@ int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
 	return SOAP_OK;
 }
 
-int ims__newUser (struct User myUser, int *result) {
+
+int ims__newUser (struct soap *soap, char * user, int * result) {
 	
+	// Comprobamos que el usuario existe
+	if(checkUsers(user) >= 0) {
+		printf("El usuario %s ya existe\n", &user);
+	}
+	else { 
+		strcpy(userlist.users[userlist.numusers].name, user);
+		userlist.users[userlist.numusers].numfriends = 0;
+		userlist.users[userlist.numusers].state = OFFLINE;
+		userlist.numusers++;
+	}
+	
+	return SOAP_OK;
 }
+
 
 int ims_comprobarUsuario(char * user, int *result) {
 	
 }
 
-int ims__deleteUser (struct User myUser, int *result) {
 
+int ims__deleteUser (struct soap *soap, char * user, int * result) {
+
+	// Comprobamos que el usuario existe
+	if(checkUsers(user) >= 0) {
+		userlist.users[userlist.numusers].state = DELETED;
+		
+	}
+	else { 
+		printf("El usuario %s no existe\n", &user);
+	}
+	
+	return SOAP_OK;
 }
 
 

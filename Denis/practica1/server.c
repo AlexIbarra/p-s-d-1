@@ -23,6 +23,94 @@ int comprobarNick(char * nick);
 void salir(int senal);
 int guardarListaUsuarios();
 
+
+
+
+
+
+
+
+int main(int argc, char **argv){ 
+   
+   // Asigno el handler para el Ctrl + C
+   signal(SIGINT,salir);
+
+   // Declaro estructura soap
+   struct soap soap; 
+
+   // Inicializo la estructura soap
+   soap_init(&soap); 
+
+
+   // Compruebo que me han pasado bien los argumentos al ejecutar el servidor
+   if (argc < 2) 
+   { 
+      printf("Usage: ./server xxxx (port)\n"); 
+      soap_serve(&soap); 
+      soap_destroy(&soap);
+      soap_end(&soap); 
+   } 
+   else{ 
+      soap.send_timeout = 60; 
+      soap.recv_timeout = 60; 
+      soap.accept_timeout = 3600; // server stops after 1 hour of inactivity
+      soap.max_keep_alive = 100;  // max keep-alive sequence
+      void *process_request(void*); 
+      struct soap *tsoap; 
+      pthread_t tid; 
+      int port = atoi(argv[1]); // first command-line arg is port
+      SOAP_SOCKET m, s; 
+      m = soap_bind(&soap, NULL, port, BACKLOG); 
+      if (!soap_valid_socket(m)){
+		soap_print_fault(&soap, stderr);
+        exit(1); 
+	
+      }
+      fprintf(stderr, "Socket connection successful %d\n", m); 
+ 
+ 	// Cargamos lus usuarios guardados en disco
+      cargarListaUsuarios();
+ 
+      for (;;) 
+      { 
+         s = soap_accept(&soap); 
+         if (!soap_valid_socket(s)) 
+         { 
+            if (soap.errnum) 
+            { 
+               soap_print_fault(&soap, stderr); 
+               exit(1); 
+            } 
+            fprintf(stderr, "server timed out\n"); 
+            break; 
+         }
+
+         // gestiono la funcion que me pide el Cliente
+		 soap_serve(&soap);
+		 soap_end(&soap);
+
+
+         tsoap = soap_copy(&soap); 
+         if (!tsoap) 
+            break; 
+         pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)tsoap); 
+      } 
+   } 
+   soap_done(&soap); 
+   return 0; 
+} 
+
+
+
+
+
+
+
+
+
+// ******** FUNCIONES PROPIAS DEL SERVIDOR ********* //
+
+// Handler para la señal Cntrl + C
 void salir(int senal){
 
 	int i;
@@ -43,78 +131,7 @@ void salir(int senal){
 	}
 }
 
-int main(int argc, char **argv){ 
-   
-   signal(SIGINT,salir);
-
-   struct soap soap; 
-
-   soap_init(&soap); 
-
-   if (argc < 2) 
-   { 
-      printf("Usage: ./server xxxx (port)\n"); 
-      soap_serve(&soap); 
-      soap_destroy(&soap);
-      soap_end(&soap); 
-   } 
-   else{ 
-      soap.send_timeout = 60; 
-      soap.recv_timeout = 60; 
-      soap.accept_timeout = 3600;
-      soap.max_keep_alive = 100; 
-      void *process_request(void*); 
-      struct soap *tsoap; 
-      pthread_t tid; 
-      int port = atoi(argv[1]); 
-      SOAP_SOCKET m, s; 
-      m = soap_bind(&soap, NULL, port, BACKLOG); 
-      if (!soap_valid_socket(m)){
-	 soap_print_fault(&soap, stderr);
-         exit(1); 
-	
-      }
-      fprintf(stderr, "Socket connection successful %d\n", m); 
- 
-      cargarListaUsuarios();
- 
-      for (;;) 
-      { 
-         s = soap_accept(&soap); 
-         if (!soap_valid_socket(s)) 
-         { 
-            if (soap.errnum) 
-            { 
-               soap_print_fault(&soap, stderr); 
-               exit(1); 
-            } 
-            fprintf(stderr, "server timed out\n"); 
-            break; 
-         }
-	 soap_serve(&soap);
-	 soap_end(&soap);
-
-         tsoap = soap_copy(&soap); 
-         if (!tsoap) 
-            break; 
-         pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)tsoap); 
-      } 
-   } 
-   soap_done(&soap); 
-   return 0; 
-} 
-void *process_request(void *soap) { 
-
-   pthread_detach(pthread_self()); 
-   soap_serve((struct soap*)soap); 
-   soap_destroy((struct soap*)soap); 
-   soap_end((struct soap*)soap); 
-   soap_done((struct soap*)soap); 
-   free(soap); 
-
-   return NULL; 
-}
-
+// Comprueba que el usuario esta en la estructura de "registrados"
 int comprobarNick(char * nick){
 
 	int i = 0;
@@ -128,6 +145,61 @@ int comprobarNick(char * nick){
 	}
 	return -1;
 
+}
+
+// Guarda en disco una lista de usuarios
+int guardarListaUsuarios(){
+
+	FILE * fichero = fopen("serverFiles/listaUsuarios","w");
+	if(fichero == NULL){
+		printf("Error al abrir el archivo ListaUsuario\n");
+		return -1;
+	}
+	else{
+		printf("Guardando listaUsuarios\n");
+		fwrite(&registrados, sizeof(struct ListaUsuarios), 1, fichero);
+		printf("Lista guardada con éxito\n");
+		fclose(fichero);
+		return 1;
+	}
+}
+
+// Carga de disco una lista de usuarios
+int cargarListaUsuarios(){
+
+	int i = 0;
+	FILE * fichero = fopen("serverFiles/listaUsuarios","r");
+	if(fichero == NULL){
+		printf("Error al abrir el archivo ListaUsuario, creando uno nuevo.\n");	
+		fichero = fopen("serverFiles/listaUsuarios","w");
+		fclose(fichero);
+		return -1;
+	}
+	else{
+		printf("Cargando listaUsuarios\n");
+		fread(&registrados, sizeof(struct ListaUsuarios), 1, fichero);
+		printf("Lista cargada con éxito\n");
+		fclose(fichero);
+		return 1;
+	}
+
+}
+
+
+
+// ******** FUNCIONES IMS ********* //
+
+
+void *process_request(void *soap) { 
+
+   pthread_detach(pthread_self()); 
+   soap_serve((struct soap*)soap); 
+   soap_destroy((struct soap*)soap); 
+   soap_end((struct soap*)soap); 
+   soap_done((struct soap*)soap); 
+   free(soap); 
+
+   return NULL; 
 }
 
 int ims__darAltaUsuario(struct soap *soap, char * user, int * result){
@@ -277,43 +349,6 @@ int ims__logout(struct soap *soap, char * login, int * result){
 
 }
 
-int guardarListaUsuarios(){
-
-	FILE * fichero = fopen("serverFiles/listaUsuarios","w");
-	if(fichero == NULL){
-		printf("Error al abrir el archivo ListaUsuario\n");
-		return -1;
-	}
-	else{
-		printf("Guardando listaUsuarios\n");
-		fwrite(&registrados, sizeof(struct ListaUsuarios), 1, fichero);
-		printf("Lista guardada con éxito\n");
-		fclose(fichero);
-		return 1;
-	}
-}
-
-int cargarListaUsuarios(){
-
-	int i = 0;
-	FILE * fichero = fopen("serverFiles/listaUsuarios","r");
-	if(fichero == NULL){
-		printf("Error al abrir el archivo ListaUsuario, creando uno nuevo.\n");	
-		fichero = fopen("serverFiles/listaUsuarios","w");
-		fclose(fichero);
-		return -1;
-	}
-	else{
-		printf("Cargando listaUsuarios\n");
-		fread(&registrados, sizeof(struct ListaUsuarios), 1, fichero);
-		printf("Lista cargada con éxito\n");
-		fclose(fichero);
-		return 1;
-	}
-
-}
-
-
 int ims__anadirAmigo(struct soap *soap, char * login, char * destino, int * result){
 	
 	printf ("ims__anadir amigo %s quiere ser amigo de %s\n", login, destino);
@@ -386,7 +421,6 @@ int ims__tratarSolicitud(struct soap *soap, char * login, char * solicitante, in
 
 	return SOAP_OK;
 }
-
 
 int ims__listarPendientes(struct soap *soap, char * login, int * result, struct ListaUsuarios *listaAmigos){
 
