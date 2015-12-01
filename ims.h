@@ -10,14 +10,14 @@ typedef char *xsd__string;
 
 
 struct Message {
-	char emisor[IMS_MAX_NAME_SIZE];
-	char receptor[IMS_MAX_NAME_SIZE];
-	char msg[IMS_MAX_MSG_SIZE];
+	char emisor[16];
+	char receptor[16];
+	char msg[280];
 };
 
 struct User {
-	char name[IMS_MAX_NAME_SIZE];
-	char *friends[IMS_MAX_FRIENDS];
+	char name[16];
+	char *friends[50];
 	int numfriends;
 	int state;
 };
@@ -36,6 +36,5 @@ struct MessageList {
 
 int ims__sendMessage (struct Message myMessage, int *result);
 int ims__receiveMessage (struct Message *myMessage);
-int ims__newUser (struct soap *soap, char * user, int * result);
-int ims_comprobarUsuario(char * user, int *result);
-int ims__deleteUser (struct User myUser, int *result);
+int ims__newUser (char * user, int * result);
+int ims__deleteUser (char *user, int *result);

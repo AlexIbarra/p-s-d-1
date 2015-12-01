@@ -14,9 +14,16 @@ struct UsersList userlist;
 struct MessageList messagelist;
 
 /*### MACROS ###*/
+#define BACKLOG (100)
 #define OFFLINE 0
 #define ONLINE 1
 #define DELETED -1
+
+
+int checkUsers(char *name);
+int checkUsersState(char *name);
+int loadUserList();
+int loadMessageList();
 void salir(int senal);
 
 
@@ -36,7 +43,7 @@ int main(int argc, char **argv) {
     	soap_serve(&soap); 
       	soap_destroy(&soap);
       	soap_end(&soap); 
-		exit(-1); 
+		//exit(-1); 
   	}
   	else {
   		soap.send_timeout = 60; 
@@ -114,22 +121,21 @@ int loadUserList() {
 		for(i=0; i<numusers; i++) {
 
 			// Leo el nombre del primer usuario
-			read(fd,user,IMS_MAX_NAME_SIZE);
-			userlist.users[i].name = user;
+			read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
+			//userlist.users[i].name = user;
 
 			// Leo el numero de amigos que tenga
-			read(fd,&friends,sizeof(int));
-			userlist.users[i].numfriends = friends;
+			read(fd,&userlist.users[i].numfriends,sizeof(int));
+			//userlist.users[i].numfriends = friends;
 
 			// Leo los amigos
 			for(j=0; j<friends; j++) {
-				read(fd,user,IMS_MAX_NAME_SIZE);
-				userlist.users[i].friends[j] = user;
-				lseek(file,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
+				read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
+				//userlist.users[i].friends[j] = user;
+				lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
+				//Asignamos el estado del usuario
+				userlist.users[i].state = OFFLINE;
 			}
-
-			//Asignamos el estado del usuario
-			userlist.state = OFFLINE;
 		}
 	}
 	return 1;
@@ -152,16 +158,16 @@ int loadMessageList() {
 		for(i=0; i<nummessages; i++) {
 
 			// Leo el nombre del emisor
-			read(fd,user,IMS_MAX_NAME_SIZE);
-			messagelist.messages[i].emisor = user;
+			read(fd,messagelist.messages[i].emisor,IMS_MAX_NAME_SIZE);
+			//messagelist.messages[i].emisor = user;
 
 			// Leo el nombre del receptor
-			read(fd,user,IMS_MAX_NAME_SIZE);
-			messagelist.messages[i].receptor = user;
+			read(fd,messagelist.messages[i].receptor,IMS_MAX_NAME_SIZE);
+			//messagelist.messages[i].receptor = user;
 
 			// Leo el mensaje
-			read(fd,msg,IMS_MAX_MSG_SIZE);
-			messagelist.messages[i].msg = msg;
+			read(fd,messagelist.messages[i].msg,IMS_MAX_MSG_SIZE);
+			//messagelist.messages[i].msg = msg;
 
 		}
 	}
@@ -188,7 +194,7 @@ int checkUsersState(char *name) {
 	int i = 0;
 
 	
-	if((i = chekUsers(name)) != -1){
+	if((i = checkUsers(name)) != -1){
 		return userlist.users[i].state;
 	}
 	return -1;
@@ -197,18 +203,19 @@ int checkUsersState(char *name) {
 
 
 
-// Handler para la señal Cntrl + C
-void salir(int senal){
+// Handler para la señal Cntrl + C 
 
+void salir(int senal){
+/*
 	int i;
 	fflush (stdout);
 	switch(senal){
 		case SIGINT:
 			printf("Cerrando servidor...\n");
 
-			for(i = 0; i< registrados.contador ; i++){
-				if(registrados.listaUsuarios[i].estado == CONECTADO){
-					registrados.listaUsuarios[i].estado = DESCONECTADO;
+			for(i = 0; i< userlist.contador ; i++){
+				if(userlist.listaUsuarios[i].estado == ONLINE){
+					userlist.listaUsuarios[i].estado = OFFLINE;
 				}
 			}
 
@@ -216,6 +223,7 @@ void salir(int senal){
 			exit(1);
 		break;
 	}
+*/
 }
 
 
@@ -248,25 +256,25 @@ void *process_request(void *soap) {
 
 int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 
-	printf ("Received by server: \n\tusername:%s \n\tmsg:%s\n", myMessage.name, myMessage.msg);
+	printf ("Received by server: \n\tusername:%s \n\tmsg:%s\n", myMessage.emisor, myMessage.msg);
 	return SOAP_OK;
 }
 
 
 int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
-
+/*
 	// Allocate space for the message field of the myMessage struct then copy it
-	myMessage->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
+	Message->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
 	// Not necessary with strcpy since uses null-terminated strings
 	// memset(myMessage->msg, 0, IMS_MAX_MSG_SIZE);
-	strcpy (myMessage->msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
+	strcpy (myMessage.msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
 
 	// Allocate space for the name field of the myMessage struct then copy it
-	myMessage->name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
+	myMessage.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
 	// Not necessary with strcpy since uses null-terminated strings
 	// memset(myMessage->name, 0, IMS_MAX_NAME_SIZE);  
-	strcpy(myMessage->name, "aServer");	
-
+	strcpy(myMessage.name, "aServer");	
+*/
 	return SOAP_OK;
 }
 
@@ -287,10 +295,6 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	return SOAP_OK;
 }
 
-
-int ims_comprobarUsuario(char * user, int *result) {
-	
-}
 
 
 int ims__deleteUser (struct soap *soap, char * user, int * result) {

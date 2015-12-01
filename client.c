@@ -45,12 +45,9 @@ int main(int argc, char **argv){
 	
 	
 	/* Pregunto al servidor si el usuario esta logueado */
-	if(!comprobarUsuario(user)) {// --> Si el usuario NO esta logueado
-	
-		// Le mostramos un mensaje para que se pueda dar de alta
-		newUser();
-		printf("Nuevo usuario %s añadido\n", &user);
-	}
+	// Le mostramos un mensaje para que se pueda dar de alta
+	newUser();
+	printf("Nuevo usuario %s añadido\n", &user);
 
 	// Mostramos el menu y recogemos la opcion
 	opcion = menu();
@@ -92,63 +89,19 @@ char menu(){
 
 int gestorMenu(int op) {
 	
-	int status;
+	int status = 0;
 	
-	switch(op)
-	
+	switch(op) {
 		case 1: // Dar de alta usuario
-		
 			status = newUser();
-			break;
-		
-		case 2:
-		
-			break;
-		
-		case 3:
-		
-			break;
-		
-		case 4:
-		
-			break;
-			
-		case 5:
-		
-			break;
-			
-		case 6:
-		
-			break;
-
-		case 7:
-		
-			break;
-			
-		case 8:
-		
-			break;
-			
-		case 9:
-		
-			break;
-		
+			break;		
 		default:
-		
 			break;
+	}
 	
 	return status;		
 }
 
-
-// Comprueba si el usuario esta dado de alta o si ya esta logueado
-int comprobarUsuario(char * name) {
-	int res;
-	
-	soap_call_ims__comprobarUsuario(name, &res);
-	
-	return res;
-}
 
 
 int newUser() {
@@ -165,11 +118,11 @@ int newUser() {
 	//soap_call_ims__newUser (&soap, serverURL, "", myUser, &res);
 	
 	// Check for errors...
-  	if (soap.error) {
-      	soap_print_fault(&soap, stderr); 
+  	//if (soap.error) {
+      	//soap_print_fault(&soap, stderr); 
 		//exit(1);
 		res = 0;
-  	}
+  	//}
 	
 	return res;
 }
