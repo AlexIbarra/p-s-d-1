@@ -138,10 +138,10 @@ int loadUserList() {
 			}
 		}
 	}
+
+	close(fd);
 	return 1;
 }
-
-
 
 int loadMessageList() {
 
@@ -171,9 +171,10 @@ int loadMessageList() {
 
 		}
 	}
+
+	close(fd);
 	return 1;
 }
-
 
 int checkUsers(char *name) {
 
@@ -182,6 +183,7 @@ int checkUsers(char *name) {
 	for(i=0; i < userlist.numusers; i++){
 		
 		if(strcmp(userlist.users[i].name,name)==0){
+			printf("%s\n", userlist.users[i].name);
 			return i;
 		}
 
@@ -200,30 +202,61 @@ int checkUsersState(char *name) {
 	return -1;
 }
 
+void guardarUsuarios() {
+
+	int fd = open("bbdd/users.txt",O_RDWR, 0666);
+
+	if(read(fd,&numusers,sizeof(int)) < 0)
+		printf("Error lectura de la base de datos de los usuarios\n");
+	else {
+		userlist.numusers = numusers;
+		for(i=0; i<numusers; i++) {
+
+			// Leo el nombre del primer usuario
+			read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
+			//userlist.users[i].name = user;
+
+			// Leo el numero de amigos que tenga
+			read(fd,&userlist.users[i].numfriends,sizeof(int));
+			//userlist.users[i].numfriends = friends;
+
+			// Leo los amigos
+			for(j=0; j<friends; j++) {
+				read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
+				//userlist.users[i].friends[j] = user;
+				lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
+				//Asignamos el estado del usuario
+				userlist.users[i].state = OFFLINE;
+			}
+		}
+	}
+
+	close(fd);
+}
 
 
 
 // Handler para la señal Cntrl + C 
 
 void salir(int senal){
-/*
+
 	int i;
 	fflush (stdout);
 	switch(senal){
 		case SIGINT:
 			printf("Cerrando servidor...\n");
 
-			for(i = 0; i< userlist.contador ; i++){
+			/*for(i = 0; i< userlist.contador ; i++){
 				if(userlist.listaUsuarios[i].estado == ONLINE){
 					userlist.listaUsuarios[i].estado = OFFLINE;
 				}
 			}
 
-			guardarListaUsuarios();
+			guardarListaUsuarios();*/
 			exit(1);
 		break;
 	}
-*/
+
 }
 
 
@@ -283,13 +316,16 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	
 	// Comprobamos que el usuario existe
 	if(checkUsers(user) >= 0) {
-		printf("El usuario %s ya existe\n", &user);
+		printf("El usuario %s ya existe\n", user);
 	}
 	else { 
 		strcpy(userlist.users[userlist.numusers].name, user);
 		userlist.users[userlist.numusers].numfriends = 0;
 		userlist.users[userlist.numusers].state = OFFLINE;
 		userlist.numusers++;
+
+		printf("Añadido usuario %s\n", userlist.users[userlist.numusers].name);
+		printf("Numero de usuarios: %d\n", userlist.numusers);
 	}
 	
 	return SOAP_OK;

@@ -7,10 +7,10 @@ SSL_FLAGS=-DWITH_OPENSSL
 all:	client server
 
 client:	
-	gcc $(SSL_FLAGS) -o client client.c soapC.c soapClient.c -I$(GSOAP_INCLUDE) -lgsoap $(SSL_LIBS) -L$(GSOAP_HOME)
+	gcc $(SSL_FLAGS) -o client client.c soapC.c soapClient.c -lgsoap $(SSL_LIBS) -L/usr/lib
 
 server:	
-	gcc $(SSL_FLAGS) -o server server.c soapC.c soapServer.c -lpthread -I$(GSOAP_INCLUDE) -lgsoap $(SSL_LIBS) -L$(GSOAP_HOME)
+	gcc $(SSL_FLAGS) -o server server.c soapC.c soapServer.c -lpthread -lgsoap $(SSL_LIBS) -L/usr/lib
 
 clean:	
 	rm client server *.xml *.nsmap *.wsdl *.xsd soapStub.h soapServerLib.c soapH.h soapServer.c soapClientLib.c soapClient.c soapC.c 

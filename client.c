@@ -12,6 +12,8 @@
 
 // Fariables globales
 char *user;
+char *serverURL;
+struct soap soap;
 
 
 char menu();
@@ -19,18 +21,19 @@ char menu();
 
 int main(int argc, char **argv){
 
-  struct soap soap;
+  
   //struct Message myMsg[IMS_MAX_FRIENDS];
   char *friends[IMS_MAX_NAME_SIZE];
-  char *serverURL;
+  
   char *msg;
   int res;
   int opcion;
   
   
 	// Usage
-  	if (argc != 2) {
+  	if (argc != 3) {
 	   printf("Usage: %s http://server:port\n",argv[0]);
+	   //printf("Usage: %d http://server:port\n",argc);
 	   exit(0);
   	}
 
@@ -39,7 +42,7 @@ int main(int argc, char **argv){
   	
 	// Obtain server address
 	serverURL = argv[1];
-	
+		
 	// Nombre del usuario logueado
 	user = argv[2];
 	
@@ -47,7 +50,7 @@ int main(int argc, char **argv){
 	/* Pregunto al servidor si el usuario esta logueado */
 	// Le mostramos un mensaje para que se pueda dar de alta
 	newUser();
-	printf("Nuevo usuario %s añadido\n", &user);
+	printf("Nuevo usuario %s añadido\n", user);
 
 	// Mostramos el menu y recogemos la opcion
 	opcion = menu();
@@ -115,14 +118,15 @@ int newUser() {
 	//strcpy (myUser.name, user);
 	
 	// Hacemos la llamada a la funcion newUser de gsoap para pasarle la info al servidor
-	//soap_call_ims__newUser (&soap, serverURL, "", myUser, &res);
+	printf("Se va a añadir un nuevo usuario\n");
+	soap_call_ims__newUser (&soap, serverURL, "", user, &res);
 	
 	// Check for errors...
-  	//if (soap.error) {
-      	//soap_print_fault(&soap, stderr); 
-		//exit(1);
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
 		res = 0;
-  	//}
+  	}
 	
 	return res;
 }
