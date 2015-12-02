@@ -38,3 +38,4 @@ int ims__sendMessage (struct Message myMessage, int *result);
 int ims__receiveMessage (struct Message *myMessage);
 int ims__newUser (char * user, int * result);
 int ims__deleteUser (char *user, int *result);
+int ims__listFriends (char * user, char *friends[], int * result);

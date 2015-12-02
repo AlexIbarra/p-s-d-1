@@ -105,11 +105,14 @@ int gestorMenu(int op) {
 			status = newUser();
 			break;
 		case 2: // Dar de baja usuario
-			status = deleteUser();		
+			status = deleteUser();
+			break;	
 		case 3: //Listar amigos
 			status = listFriends();
+			break;
 		case 4: //Añadir un amigo
 			status = newFriend();
+			break;
 		default:
 			break;
 	}
@@ -121,15 +124,7 @@ int gestorMenu(int op) {
 
 int newUser() {
 	int res;
-	//struct UserServer myUser;
 	
-	// Reservamos espacio para el nombre
-	//myUser.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
-	
-	// Copiamos el nombre de usuario recogido a la estructura
-	//strcpy (myUser.name, user);
-	
-	// Hacemos la llamada a la funcion newUser de gsoap para pasarle la info al servidor
 	printf("Se va a añadir un nuevo usuario\n");
 	soap_call_ims__newUser (&soap, serverURL, "", user, &res);
 	
@@ -147,11 +142,12 @@ int newUser() {
 
 int deleteUser(){
 	char* userdel;
+	int res;
 	
 	printf("Introduce el nombre de usuario que deseas eliminar: \n");
-	scanf(%s, &userdel);
+	scanf("%s", &userdel);
 	
-	soap_call_ims__deleteUser (&soap, serverURL, "", &userdel, &res);
+	soap_call_ims__deleteUser (&soap, serverURL, "", userdel, &res);
 	
 	// Check for errors...
   	if (soap.error) {
@@ -165,10 +161,13 @@ int deleteUser(){
 
 
 int listFriends(){
+	int res;
+
+	char *friends[IMS_MAX_FRIENDS];
 	
 	printf("Los amigos de %s son:\n", user);
 
-	soap_call_ims__listFriends (&soap, serverURL, "", &user, &res);
+	soap_call_ims__listFriends (&soap, serverURL, "", user, friends, &res);
 
 	// Check for errors...
   	if (soap.error) {
@@ -181,31 +180,45 @@ int listFriends(){
 }
 
 int newFriend(){
+	int res;
 	char* userfriend;
 	printf("Introduce el nombre del usuario que quieres añadir como amigo: \n");
-	scanf(%s, &userfriend);
+	scanf("%s", &userfriend);
 
 
-	soap_call_ims__newFriend (&soap, serverURL, "", &user, &userfriend, &res);
+	//soap_call_ims__newFriend (&soap, serverURL, "", &user, &userfriend, &res);
 	
 	// Check for errors...
-  	if (soap.error) {
+  	/*if (soap.error) {
       	soap_print_fault(&soap, stderr); 
 		exit(1);
 		res = 0;
   	}
-	
+	*/
 	return res;
 }
 
 int newMessage(){
+	int res;
 	char* receptor;
 	char* message;
+	struct Message msg;
+
 	printf("Escribe el nombre del receptor del mensaje: \n");
-	scanf(%s, &receptor);
+	scanf("%s", &receptor);
 	printf("Escribe el mensaje: (Max 280 caracteres)\n");
 	fgets(message, 280, stdin);
-	soap_call_ims__newMessage (&soap, serverURL, "", &user, &userreceptor,&message, &res);
+
+	// Guardo el emisor en la estructura
+	strcpy(msg.emisor, user);
+
+	// Guardo el receptor en la estructura
+	strcpy(msg.emisor, receptor);
+
+	// Guardo el mensaje en la estructura
+	strcpy(msg.emisor, message);
+
+	soap_call_ims__sendMessage (&soap, serverURL, "", msg, &res);
 
 	// Check for errors...
   	if (soap.error) {

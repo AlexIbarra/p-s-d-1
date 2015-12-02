@@ -204,34 +204,77 @@ int checkUsersState(char *name) {
 
 void guardarUsuarios() {
 
+	int i=0, j=0;
+
 	int fd = open("bbdd/users.txt",O_RDWR, 0666);
 
-	if(read(fd,&numusers,sizeof(int)) < 0)
-		printf("Error lectura de la base de datos de los usuarios\n");
-	else {
-		userlist.numusers = numusers;
-		for(i=0; i<numusers; i++) {
+	if(fd == -1) {
+		fprintf(stderr, "Error open\n");
+		exit(1);
+	}
 
-			// Leo el nombre del primer usuario
-			read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
-			//userlist.users[i].name = user;
+	for(i=0; i<userlist.numusers; i++) {
 
-			// Leo el numero de amigos que tenga
-			read(fd,&userlist.users[i].numfriends,sizeof(int));
-			//userlist.users[i].numfriends = friends;
+		// Guardamos el numero de usuarios
+		write(fd, &userlist.numusers, sizeof(int));
 
-			// Leo los amigos
-			for(j=0; j<friends; j++) {
-				read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
-				//userlist.users[i].friends[j] = user;
-				lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
-				//Asignamos el estado del usuario
-				userlist.users[i].state = OFFLINE;
-			}
+		// Guardamos el nombre
+		write(fd, &userlist.users[i].name, sizeof(char)*strlen(userlist.users[i].name));
+
+		// Guardamos el numero de amigos
+		write(fd, &userlist.users[i].numfriends, sizeof(int));
+
+		// Si tiene amigos, los guardamos
+		for(j=0; j<userlist.users[i].numfriends; j++) {
+			write(fd, &userlist.users[i].friends[j], sizeof(char)*strlen(userlist.users[i].friends[j]));		
 		}
+
 	}
 
 	close(fd);
+}
+
+void guardarMensajes() {
+
+	int i=0, j=0;
+
+	int fd = open("bbdd/messages.txt",O_RDWR, 0666);
+
+	if(fd == -1) {
+		fprintf(stderr, "Error open\n");
+		exit(1);
+	}
+
+	for(i=0; i<messagelist.nummessages; i++) {
+
+		// Guardamos el numero de mensajes
+		write(fd, &messagelist.nummessages, sizeof(int));
+
+		// Guardamos el nombre del emisor
+		write(fd, &messagelist.messages[i].emisor, sizeof(char)*strlen(messagelist.messages[i].emisor));
+
+		// Guardamos el nombre del receptor
+		write(fd, &messagelist.messages[i].receptor, sizeof(char)*strlen(messagelist.messages[i].receptor));
+
+		// Guardamos el mensaje
+		write(fd, &messagelist.messages[i].msg, sizeof(char)*strlen(messagelist.messages[i].msg));
+
+
+	}
+
+	close(fd);
+}
+
+void listarAmigos(int pos, char *friends[]) {
+
+	/*int i=0;
+
+	for(i=0; i<userlist.users[pos].numfriends; i++) {
+		*friends[i] = userlist.users[pos].friends[i];
+	}
+	*/
+	*friends = (char*)userlist.users[pos].friends;
+
 }
 
 
@@ -253,6 +296,8 @@ void salir(int senal){
 			}
 
 			guardarListaUsuarios();*/
+			guardarUsuarios();
+			guardarMensajes();
 			exit(1);
 		break;
 	}
@@ -295,19 +340,32 @@ int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 
 
 int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
-/*
-	// Allocate space for the message field of the myMessage struct then copy it
-	Message->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
-	// Not necessary with strcpy since uses null-terminated strings
-	// memset(myMessage->msg, 0, IMS_MAX_MSG_SIZE);
-	strcpy (myMessage.msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
+	/*
+		// Allocate space for the message field of the myMessage struct then copy it
+		Message->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
+		// Not necessary with strcpy since uses null-terminated strings
+		// memset(myMessage->msg, 0, IMS_MAX_MSG_SIZE);
+		strcpy (myMessage.msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
 
-	// Allocate space for the name field of the myMessage struct then copy it
-	myMessage.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
-	// Not necessary with strcpy since uses null-terminated strings
-	// memset(myMessage->name, 0, IMS_MAX_NAME_SIZE);  
-	strcpy(myMessage.name, "aServer");	
-*/
+		// Allocate space for the name field of the myMessage struct then copy it
+		myMessage.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
+		// Not necessary with strcpy since uses null-terminated strings
+		// memset(myMessage->name, 0, IMS_MAX_NAME_SIZE);  
+		strcpy(myMessage.name, "aServer");	
+	*/
+	return SOAP_OK;
+}
+
+
+int ims__listFriends (struct soap *soap, char * user, char *friends[], int * result) {
+	int pos;
+	if((pos = checkUsers(user)) != -1) {
+
+		listarAmigos(pos, friends);
+
+		*result = 1;
+	}
+
 	return SOAP_OK;
 }
 
@@ -324,7 +382,7 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 		userlist.users[userlist.numusers].state = OFFLINE;
 		userlist.numusers++;
 
-		printf("Añadido usuario %s\n", userlist.users[userlist.numusers].name);
+		printf("Añadido usuario %s\n", &userlist.users[userlist.numusers].name);
 		printf("Numero de usuarios: %d\n", userlist.numusers);
 	}
 	
