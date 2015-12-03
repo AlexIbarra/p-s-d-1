@@ -199,7 +199,7 @@ int checkUsersState(char *name) {
 	if((i = checkUsers(name)) != -1){
 		return userlist.users[i].state;
 	}
-	return -1;
+	return -2;
 }
 
 void guardarUsuarios() {
@@ -373,18 +373,47 @@ int ims__listFriends (struct soap *soap, char * user, char *friends[], int * res
 int ims__newUser (struct soap *soap, char * user, int * result) {
 	
 	// Comprobamos que el usuario existe
-	if(checkUsers(user) >= 0) {
-		printf("El usuario %s ya existe\n", user);
-	}
-	else { 
+	int estado = checkUsersState(user);
+	int pos;
+
+	/* El usuario ya existe y esta conectado */
+	if(estado == ONLINE) {		
+	
+		/* Codigo ya existe el usuario */
+		(*result) = 1;
+	}/* El usuario ya existe y esta desconectado */
+	else if(estado == OFFLINE) {
+
+		/* Cambiamos el estado del usuario a conectado*/
+		pos = checkUsers(user);
+		userlist.users[pos].state = ONLINE;
+
+		(*result) = 2;
+
+	}/* El usuario fue eliminado. Se pregunta por reactivacion */
+	else if(estado == DELETED) {
+
+		/* Codigo usuario borrado */
+		(*result) = -1;
+
+	}/* El usuario no existe y hay hueco en la lista */
+	else if(userlist.numusers < IMS_MAX_USERS) {
+
 		strcpy(userlist.users[userlist.numusers].name, user);
 		userlist.users[userlist.numusers].numfriends = 0;
 		userlist.users[userlist.numusers].state = OFFLINE;
 		userlist.numusers++;
 
-		printf("Añadido usuario %s\n", &userlist.users[userlist.numusers].name);
-		printf("Numero de usuarios: %d\n", userlist.numusers);
+		/* Codigo exito al añadir */
+		(*result) = 0;
+
+	}/* La lista de usuario esta llena e informamos */
+	else {
+
+		/* Codigo lista llena */
+		(*result) = -2;
 	}
+
 	
 	return SOAP_OK;
 }

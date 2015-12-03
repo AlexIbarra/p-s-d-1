@@ -11,7 +11,6 @@
 
 
 // Fariables globales
-char *user;
 char *serverURL;
 struct soap soap;
 
@@ -23,21 +22,22 @@ int deleteUser();
 int newFriend();
 int newMessage();
 
+
+
 int main(int argc, char **argv){
 
   
   //struct Message myMsg[IMS_MAX_FRIENDS];
-  char *friends[IMS_MAX_NAME_SIZE];
-  
-  char *msg;
-  int res;
-  int opcion;
+	char *friends[IMS_MAX_NAME_SIZE];
+	char *user;
+	char *msg;
+	int res;
+	int opcion;
   
   
 	// Usage
   	if (argc != 3) {
 	   printf("Usage: %s http://server:port\n",argv[0]);
-	   //printf("Usage: %d http://server:port\n",argc);
 	   exit(0);
   	}
 
@@ -50,13 +50,8 @@ int main(int argc, char **argv){
 	// Nombre del usuario logueado
 	user = argv[2];
 	
-	
-	/* Pregunto al servidor si el usuario esta logueado */
-	
-	// Le mostramos un mensaje para que se pueda dar de alta
-
-	newUser();
-	printf("Nuevo usuario %s añadido\n", user);
+	/* Añadimos el usuario con el que se ha concetado el cliente */
+	newUser(user);
 
 	// Mostramos el menu y recogemos la opcion
 	opcion = menu();
@@ -96,16 +91,23 @@ char menu(){
 		
 }
 
-int gestorMenu(int op) {
+void gestorMenu(int op) {
 	
 	int status = 0;
+	char *user;
 	
 	switch(op) {
 		case 1: // Dar de alta usuario
-			status = newUser();
+			printf("Introduzca nombre de usuario: ");
+			scanf("%s", &user);
+			printf("\n");
+			newUser(user);
 			break;
 		case 2: // Dar de baja usuario
-			status = deleteUser();
+			printf("Introduce el nombre de usuario que deseas eliminar: \n");
+			scanf("%s", &user);
+			printf("\n");
+			deleteUser(user);
 			break;	
 		case 3: //Listar amigos
 			status = listFriends();
@@ -113,19 +115,35 @@ int gestorMenu(int op) {
 		case 4: //Añadir un amigo
 			status = newFriend();
 			break;
+		case 5: //Borrar un amigo
+			status = newFriend();
+			break;
+		case 6: //Ver mensajes enviados
+			status = newFriend();
+			break;
+		case 7: //Ver mensajes recibidos
+			status = newFriend();
+			break;
+		case 8: //Enviar un mensaje
+			status = newFriend();
+			break;
+		case 8: //Cerrar sesion
+			status = newFriend();
+			break;
 		default:
 			break;
-	}
-	
-	return status;		
+	}	
 }
 
 
 
-int newUser() {
+/*##### TRATAMIENTO DE USUARIOS #####*/
+void newUser(char *user) {
+
 	int res;
+	char *option;
 	
-	printf("Se va a añadir un nuevo usuario\n");
+	/* Hacemos la peticion el servidor */
 	soap_call_ims__newUser (&soap, serverURL, "", user, &res);
 	
 	// Check for errors...
@@ -134,18 +152,39 @@ int newUser() {
 		exit(1);
 		res = 0;
   	}
-	
-	return res;
+
+  	/* Tratamiento de la respuesta del servidor */
+
+  	if(res == 0) { // Añadido correctamente
+  		printf("Añadido usuario %s\n", user);
+  	}
+	else if(res == 1) { // Usuario ya existe
+		printf("El usuario %s ya existe\n", user);
+	}
+	else if(res == 2) {
+		printf("Biembenido %s\n", user);
+	}
+	else if(res == -1) { // Usuario eliminado
+		printf("El usuario fue aliminado anteriormente. ¿Desea reactivarlo? (s/n): ");
+		scanf("%c", &option);
+		printf("\n");
+
+		if(option == 's') {
+			/* Paedimos al servidor que añada al usuario nuevamente */
+			//soap_call_ims__reactivate(&soap, serverURL, "", user, &res);
+
+			if(res == 0)
+				printf("Usuario %s reactivado correctamente\n", user);
+		}
+	}
+	else if(res == -2) { // Lista llena
+		printf("Lista de usuarios llena\n");
+	}
 }
 
+void deleteUser(char *userdel) {
 
-
-int deleteUser(){
-	char* userdel;
-	int res;
-	
-	printf("Introduce el nombre de usuario que deseas eliminar: \n");
-	scanf("%s", &userdel);
+	int res;	
 	
 	soap_call_ims__deleteUser (&soap, serverURL, "", userdel, &res);
 	
@@ -153,13 +192,12 @@ int deleteUser(){
   	if (soap.error) {
       	soap_print_fault(&soap, stderr); 
 		exit(1);
-		res = 0;
   	}
-	
-	return res;
 }
+/*##################################*/
 
 
+/*########### TRATAMIENTO DE AMIGOS ###########*/
 int listFriends(){
 	int res;
 
@@ -186,18 +224,25 @@ int newFriend(){
 	scanf("%s", &userfriend);
 
 
-	//soap_call_ims__newFriend (&soap, serverURL, "", &user, &userfriend, &res);
+	soap_call_ims__newFriend (&soap, serverURL, "", &user, &userfriend, &res);
 	
 	// Check for errors...
-  	/*if (soap.error) {
+  	if (soap.error) {
       	soap_print_fault(&soap, stderr); 
 		exit(1);
 		res = 0;
   	}
-	*/
+	
 	return res;
 }
 
+void deleteFriend(char * name) {
+
+}
+/*############################################*/
+
+
+/*########### TRATAMIENTO DE MENSAJES ###########*/
 int newMessage(){
 	int res;
 	char* receptor;
@@ -230,6 +275,8 @@ int newMessage(){
 	return res;
 }
 
+void listMessages() {}
+/*###############################################*/
 
 
 

@@ -5,6 +5,7 @@
 #define IMS_MAX_MSG_SIZE 280
 #define IMS_MAX_NAME_SIZE 16
 #define IMS_MAX_FRIENDS 50
+#define IMS_MAX_USERS 100
 
 typedef char *xsd__string;
 
@@ -34,8 +35,10 @@ struct MessageList {
 
 
 
-int ims__sendMessage (struct Message myMessage, int *result);
-int ims__receiveMessage (struct Message *myMessage);
+int ims__sendMessage (struct Message myMessage, int * result);
+int ims__receiveMessage (struct Message * myMessage);
 int ims__newUser (char * user, int * result);
-int ims__deleteUser (char *user, int *result);
-int ims__listFriends (char * user, char *friends[], int * result);
+int ims__deleteUser (char * user, int * result);
+int ims__reactivate(char * user, int * result);
+int ims__listFriends (char * user, char * friends[], int * result);
+int ims__newFriend (char * userfriend, int * result);
