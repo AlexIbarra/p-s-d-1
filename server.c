@@ -107,72 +107,98 @@ int main(int argc, char **argv) {
 
 int loadUserList() {
 
-	int numusers, i=0, j=0;
+	int numusers=0, i=0, j=0;
 	int friends;
 	char user[IMS_MAX_NAME_SIZE];
+	struct User usertmp;
+	int nread;
 
 
-	int fd = open("bbdd/users.txt",O_CREAT | O_RDONLY, 0666);
+	int fd = fopen("bbdd/users.txt","r+");
 
-	if(read(fd,&numusers,sizeof(int)) < 0)
-		printf("Error lectura de la base de datos de los usuarios\n");
-	else {
-		userlist.numusers = numusers;
-		for(i=0; i<numusers; i++) {
-
-			// Leo el nombre del primer usuario
-			read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
-			//userlist.users[i].name = user;
-
-			// Leo el numero de amigos que tenga
-			read(fd,&userlist.users[i].numfriends,sizeof(int));
-			//userlist.users[i].numfriends = friends;
-
-			// Leo los amigos
-			for(j=0; j<friends; j++) {
-				read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
-				//userlist.users[i].friends[j] = user;
-				lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
-				//Asignamos el estado del usuario
-				userlist.users[i].state = OFFLINE;
-			}
-		}
+	while((nread = fread(&usertmp, sizeof(struct User), 1, fd)) > 0) {
+		userlist.users[numusers] = usertmp;
+		printf("%s\n",userlist.users[numusers].name);
+		numusers++;
 	}
 
-	close(fd);
+	userlist.numusers = numusers;
+
+	// if(fread(fd,&numusers,sizeof(int)) < 0)
+	// 	printf("Error lectura de la base de datos de los usuarios\n");
+	// else {
+	// 	userlist.numusers = numusers;
+
+	// 	printf("Numero de usuarios: %d\n", numusers);
+
+	// 	for(i=0; i<numusers; i++) {
+
+	// 		//printf("cargando usuarios...\n");
+
+	// 		// Leo el nombre del primer usuario
+	// 		read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
+	// 		//userlist.users[i].name = user;
+
+	// 		// Leo el numero de amigos que tenga
+	// 		read(fd,&userlist.users[i].numfriends,sizeof(int));
+	// 		//userlist.users[i].numfriends = friends;
+
+	// 		//printf("Numero de amigos: %d\n", userlist.users[i].numfriends);
+
+	// 		// Leo los amigos
+	// 		for(j=0; j<friends; j++) {
+	// 			read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
+	// 			//userlist.users[i].friends[j] = user;
+	// 			lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
+	// 			//Asignamos el estado del usuario
+	// 			userlist.users[i].state = OFFLINE;
+	// 		}
+	// 	}
+	//}
+
+	fclose(fd);
 	return 1;
 }
 
 int loadMessageList() {
 
-	int nummessages, i=0;
+	int nummessages=0, i=0;
 	char msg[IMS_MAX_MSG_SIZE];
+	int nread;
+	struct Message msgtmp;
 
 
-	int fd = open("bbdd/messages.txt",O_CREAT | O_RDONLY, 0666);
+	int fd = fopen("bbdd/messages.txt","r+");
 
-	if(read(fd,&nummessages,sizeof(int)) < 0)
-		printf("Error lectura de la base de datos de los mensajes\n");
-	else {
-		messagelist.nummessages = nummessages;
-		for(i=0; i<nummessages; i++) {
-
-			// Leo el nombre del emisor
-			read(fd,messagelist.messages[i].emisor,IMS_MAX_NAME_SIZE);
-			//messagelist.messages[i].emisor = user;
-
-			// Leo el nombre del receptor
-			read(fd,messagelist.messages[i].receptor,IMS_MAX_NAME_SIZE);
-			//messagelist.messages[i].receptor = user;
-
-			// Leo el mensaje
-			read(fd,messagelist.messages[i].msg,IMS_MAX_MSG_SIZE);
-			//messagelist.messages[i].msg = msg;
-
-		}
+	while((nread = fread(&msgtmp, sizeof(struct Message), 1, fd)) > 0) {
+		messagelist.messages[nummessages] = msgtmp;
+		nummessages++;
 	}
 
-	close(fd);
+	messagelist.nummessages = nummessages;
+
+	// if(read(fd,&nummessages,sizeof(int)) < 0)
+	// 	printf("Error lectura de la base de datos de los mensajes\n");
+	// else {
+	// 	messagelist.nummessages = nummessages;
+	// 	for(i=0; i<nummessages; i++) {
+
+	// 		// Leo el nombre del emisor
+	// 		read(fd,messagelist.messages[i].emisor,IMS_MAX_NAME_SIZE);
+	// 		//messagelist.messages[i].emisor = user;
+
+	// 		// Leo el nombre del receptor
+	// 		read(fd,messagelist.messages[i].receptor,IMS_MAX_NAME_SIZE);
+	// 		//messagelist.messages[i].receptor = user;
+
+	// 		// Leo el mensaje
+	// 		read(fd,messagelist.messages[i].msg,IMS_MAX_MSG_SIZE);
+	// 		//messagelist.messages[i].msg = msg;
+
+	// 	}
+	// }
+
+	fclose(fd);
 	return 1;
 }
 
@@ -206,63 +232,74 @@ void guardarUsuarios() {
 
 	int i=0, j=0;
 
-	int fd = open("bbdd/users.txt",O_RDWR, 0666);
+	int fd = fopen("bbdd/users.txt","w+");
 
 	if(fd == -1) {
 		fprintf(stderr, "Error open\n");
 		exit(1);
 	}
 
-	for(i=0; i<userlist.numusers; i++) {
+	fwrite(&userlist.users, sizeof(struct User), userlist.numusers, fd);
 
-		// Guardamos el numero de usuarios
-		write(fd, &userlist.numusers, sizeof(int));
+	// for(i=0; i<userlist.numusers; i++) {
 
-		// Guardamos el nombre
-		write(fd, &userlist.users[i].name, sizeof(char)*strlen(userlist.users[i].name));
+	// 	// Guardamos el numero de usuarios
+	// 	write(fd, &userlist.numusers, sizeof(int));
 
-		// Guardamos el numero de amigos
-		write(fd, &userlist.users[i].numfriends, sizeof(int));
+	// 	write(fd, "\n", sizeof(char));
 
-		// Si tiene amigos, los guardamos
-		for(j=0; j<userlist.users[i].numfriends; j++) {
-			write(fd, &userlist.users[i].friends[j], sizeof(char)*strlen(userlist.users[i].friends[j]));		
-		}
+	// 	// Guardamos el nombre
+	// 	write(fd, &userlist.users[i].name, sizeof(char)*strlen(userlist.users[i].name));
 
-	}
+	// 	write(fd, "\n", sizeof(char));
 
-	close(fd);
+	// 	// Guardamos el numero de amigos
+	// 	write(fd, &userlist.users[i].numfriends, sizeof(int));
+
+	// 	write(fd, "\n", sizeof(char));
+
+	// 	// Si tiene amigos, los guardamos
+	// 	for(j=0; j<userlist.users[i].numfriends; j++) {
+	// 		write(fd, &userlist.users[i].friends[j], sizeof(char)*strlen(userlist.users[i].friends[j]));
+	// 		write(fd, "\n", sizeof(char));		
+	// 	}
+
+	// }
+
+	fclose(fd);
 }
 
 void guardarMensajes() {
 
 	int i=0, j=0;
 
-	int fd = open("bbdd/messages.txt",O_RDWR, 0666);
+	int fd = fopen("bbdd/messages.txt","w+");
 
 	if(fd == -1) {
 		fprintf(stderr, "Error open\n");
 		exit(1);
 	}
 
-	for(i=0; i<messagelist.nummessages; i++) {
+	fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
 
-		// Guardamos el numero de mensajes
-		write(fd, &messagelist.nummessages, sizeof(int));
+	// for(i=0; i<messagelist.nummessages; i++) {
 
-		// Guardamos el nombre del emisor
-		write(fd, &messagelist.messages[i].emisor, sizeof(char)*strlen(messagelist.messages[i].emisor));
+	// 	// Guardamos el numero de mensajes
+	// 	write(fd, &messagelist.nummessages, sizeof(int));
 
-		// Guardamos el nombre del receptor
-		write(fd, &messagelist.messages[i].receptor, sizeof(char)*strlen(messagelist.messages[i].receptor));
+	// 	// Guardamos el nombre del emisor
+	// 	write(fd, &messagelist.messages[i].emisor, sizeof(char)*strlen(messagelist.messages[i].emisor));
 
-		// Guardamos el mensaje
-		write(fd, &messagelist.messages[i].msg, sizeof(char)*strlen(messagelist.messages[i].msg));
+	// 	// Guardamos el nombre del receptor
+	// 	write(fd, &messagelist.messages[i].receptor, sizeof(char)*strlen(messagelist.messages[i].receptor));
+
+	// 	// Guardamos el mensaje
+	// 	write(fd, &messagelist.messages[i].msg, sizeof(char)*strlen(messagelist.messages[i].msg));
 
 
-	}
+	// }
 
-	close(fd);
+	fclose(fd);
 }
 
 void listarAmigos(int pos, char *friends[]) {
@@ -369,6 +406,10 @@ int ims__listFriends (struct soap *soap, char * user, char *friends[], int * res
 	return SOAP_OK;
 }
 
+int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * result) {
+
+}
+
 
 int ims__newUser (struct soap *soap, char * user, int * result) {
 	
@@ -432,6 +473,10 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 	}
 	
 	return SOAP_OK;
+}
+
+int ims__reactivate(struct soap *soap, char * user, int * result) {
+
 }
 
 

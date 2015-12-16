@@ -41,4 +41,4 @@ int ims__newUser (char * user, int * result);
 int ims__deleteUser (char * user, int * result);
 int ims__reactivate(char * user, int * result);
 int ims__listFriends (char * user, char * friends[], int * result);
-int ims__newFriend (char * userfriend, int * result);
+int ims__newFriend (char * user, char * userfriend, int * result);
