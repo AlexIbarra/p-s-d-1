@@ -202,6 +202,12 @@ void *process_request(void *soap) {
    return NULL; 
 }
 
+
+
+
+
+
+
 int ims__darAltaUsuario(struct soap *soap, char * user, int * result){
 
 	int ocupado;
@@ -245,7 +251,7 @@ int ims__darBajaUsuario(struct soap *soap,char * login, char * user, int * resul
 
 	posicion = comprobarNick(user);	
 
-        if(strcmp(login,user)==0){
+    if(strcmp(login,user)==0){
 		registrados.listaUsuarios[posicion].estado = INACTIVO;
 		printf("El usuario %s ha sido dado de baja correctamente\n",user);	
 		*result = 1;

@@ -114,49 +114,20 @@ int loadUserList() {
 	int nread;
 
 
-	int fd = fopen("bbdd/users.txt","r+");
+	FILE *fd = fopen("bbdd/users.txt","r+");
 
 	while((nread = fread(&usertmp, sizeof(struct User), 1, fd)) > 0) {
-		userlist.users[numusers] = usertmp;
-		printf("%s\n",userlist.users[numusers].name);
-		numusers++;
+		if(usertmp.state != DELETED) {
+			userlist.users[numusers] = usertmp;
+			printf("Leido usuario %s de la BBDD\n",userlist.users[numusers].name);
+			numusers++;
+		}
 	}
 
 	userlist.numusers = numusers;
 
-	// if(fread(fd,&numusers,sizeof(int)) < 0)
-	// 	printf("Error lectura de la base de datos de los usuarios\n");
-	// else {
-	// 	userlist.numusers = numusers;
-
-	// 	printf("Numero de usuarios: %d\n", numusers);
-
-	// 	for(i=0; i<numusers; i++) {
-
-	// 		//printf("cargando usuarios...\n");
-
-	// 		// Leo el nombre del primer usuario
-	// 		read(fd,userlist.users[i].name,IMS_MAX_NAME_SIZE);
-	// 		//userlist.users[i].name = user;
-
-	// 		// Leo el numero de amigos que tenga
-	// 		read(fd,&userlist.users[i].numfriends,sizeof(int));
-	// 		//userlist.users[i].numfriends = friends;
-
-	// 		//printf("Numero de amigos: %d\n", userlist.users[i].numfriends);
-
-	// 		// Leo los amigos
-	// 		for(j=0; j<friends; j++) {
-	// 			read(fd,userlist.users[i].friends[j],IMS_MAX_NAME_SIZE);
-	// 			//userlist.users[i].friends[j] = user;
-	// 			lseek(fd,1,SEEK_CUR); // desplazamos 1 byte el cursor por la coma
-	// 			//Asignamos el estado del usuario
-	// 			userlist.users[i].state = OFFLINE;
-	// 		}
-	// 	}
-	//}
-
 	fclose(fd);
+
 	return 1;
 }
 
@@ -168,7 +139,7 @@ int loadMessageList() {
 	struct Message msgtmp;
 
 
-	int fd = fopen("bbdd/messages.txt","r+");
+	FILE *fd = fopen("bbdd/messages.txt","r+");
 
 	while((nread = fread(&msgtmp, sizeof(struct Message), 1, fd)) > 0) {
 		messagelist.messages[nummessages] = msgtmp;
@@ -177,28 +148,8 @@ int loadMessageList() {
 
 	messagelist.nummessages = nummessages;
 
-	// if(read(fd,&nummessages,sizeof(int)) < 0)
-	// 	printf("Error lectura de la base de datos de los mensajes\n");
-	// else {
-	// 	messagelist.nummessages = nummessages;
-	// 	for(i=0; i<nummessages; i++) {
-
-	// 		// Leo el nombre del emisor
-	// 		read(fd,messagelist.messages[i].emisor,IMS_MAX_NAME_SIZE);
-	// 		//messagelist.messages[i].emisor = user;
-
-	// 		// Leo el nombre del receptor
-	// 		read(fd,messagelist.messages[i].receptor,IMS_MAX_NAME_SIZE);
-	// 		//messagelist.messages[i].receptor = user;
-
-	// 		// Leo el mensaje
-	// 		read(fd,messagelist.messages[i].msg,IMS_MAX_MSG_SIZE);
-	// 		//messagelist.messages[i].msg = msg;
-
-	// 	}
-	// }
-
 	fclose(fd);
+
 	return 1;
 }
 
@@ -209,7 +160,7 @@ int checkUsers(char *name) {
 	for(i=0; i < userlist.numusers; i++){
 		
 		if(strcmp(userlist.users[i].name,name)==0){
-			printf("%s\n", userlist.users[i].name);
+			//printf("Checkeado usuario %s\n", userlist.users[i].name);
 			return i;
 		}
 
@@ -228,43 +179,38 @@ int checkUsersState(char *name) {
 	return -2;
 }
 
+int checkFriend(char *user, char *name) {
+
+	int i = 0;
+
+	int pos = checkUsers(user);
+
+	/* Busco en la lista de amigos del usuario */
+	for(i=0; i < userlist.users[pos].friends.numfriends; i++){
+		
+		/* Si se encuentra en mi lista de amigos, retorno la posicion */
+		if(strcmp(userlist.users[pos].friends.friends[i],name)==0) {
+			return i;
+		}
+
+	}
+
+	/* Si no esta en la lista, retorno -1 */
+	return -1;
+}
+
 void guardarUsuarios() {
 
 	int i=0, j=0;
 
-	int fd = fopen("bbdd/users.txt","w+");
+	FILE *fd = fopen("bbdd/users.txt","w+");
 
-	if(fd == -1) {
+	if(fd == (FILE *)-1) {
 		fprintf(stderr, "Error open\n");
 		exit(1);
 	}
 
 	fwrite(&userlist.users, sizeof(struct User), userlist.numusers, fd);
-
-	// for(i=0; i<userlist.numusers; i++) {
-
-	// 	// Guardamos el numero de usuarios
-	// 	write(fd, &userlist.numusers, sizeof(int));
-
-	// 	write(fd, "\n", sizeof(char));
-
-	// 	// Guardamos el nombre
-	// 	write(fd, &userlist.users[i].name, sizeof(char)*strlen(userlist.users[i].name));
-
-	// 	write(fd, "\n", sizeof(char));
-
-	// 	// Guardamos el numero de amigos
-	// 	write(fd, &userlist.users[i].numfriends, sizeof(int));
-
-	// 	write(fd, "\n", sizeof(char));
-
-	// 	// Si tiene amigos, los guardamos
-	// 	for(j=0; j<userlist.users[i].numfriends; j++) {
-	// 		write(fd, &userlist.users[i].friends[j], sizeof(char)*strlen(userlist.users[i].friends[j]));
-	// 		write(fd, "\n", sizeof(char));		
-	// 	}
-
-	// }
 
 	fclose(fd);
 }
@@ -273,44 +219,31 @@ void guardarMensajes() {
 
 	int i=0, j=0;
 
-	int fd = fopen("bbdd/messages.txt","w+");
+	FILE *fd = fopen("bbdd/messages.txt","w+");
 
-	if(fd == -1) {
+	if(fd == (FILE *)-1) {
 		fprintf(stderr, "Error open\n");
 		exit(1);
 	}
 
 	fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
 
-	// for(i=0; i<messagelist.nummessages; i++) {
-
-	// 	// Guardamos el numero de mensajes
-	// 	write(fd, &messagelist.nummessages, sizeof(int));
-
-	// 	// Guardamos el nombre del emisor
-	// 	write(fd, &messagelist.messages[i].emisor, sizeof(char)*strlen(messagelist.messages[i].emisor));
-
-	// 	// Guardamos el nombre del receptor
-	// 	write(fd, &messagelist.messages[i].receptor, sizeof(char)*strlen(messagelist.messages[i].receptor));
-
-	// 	// Guardamos el mensaje
-	// 	write(fd, &messagelist.messages[i].msg, sizeof(char)*strlen(messagelist.messages[i].msg));
-
-
-	// }
-
 	fclose(fd);
 }
 
 void listarAmigos(int pos, char *friends[]) {
 
-	/*int i=0;
+	int i=0;
 
-	for(i=0; i<userlist.users[pos].numfriends; i++) {
-		*friends[i] = userlist.users[pos].friends[i];
+	printf("Listando amigos...\n");
+
+	for(i=0; i<userlist.users[pos].friends.numfriends; i++) {
+		//*friends[i] = userlist.users[pos].friends[i];
+		printf("%s\n", userlist.users[pos].friends.friends[i]);
+		//strcpy(friends[i], userlist.users[pos].friends[i]);
 	}
-	*/
-	*friends = (char*)userlist.users[pos].friends;
+	
+	//*friends = (char*)userlist.users[pos].friends;
 
 }
 
@@ -324,7 +257,7 @@ void salir(int senal){
 	fflush (stdout);
 	switch(senal){
 		case SIGINT:
-			printf("Cerrando servidor...\n");
+			printf("\nCerrando servidor...\n");
 
 			/*for(i = 0; i< userlist.contador ; i++){
 				if(userlist.listaUsuarios[i].estado == ONLINE){
@@ -369,17 +302,18 @@ void *process_request(void *soap) {
 /*###########-- FUNCIONES IMS --############*/
 
 
+
+/*################### MESSAGES ######################*/
 int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 
 	printf ("Received by server: \n\tusername:%s \n\tmsg:%s\n", myMessage.emisor, myMessage.msg);
 	return SOAP_OK;
 }
 
-
 int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
 	/*
 		// Allocate space for the message field of the myMessage struct then copy it
-		Message->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
+		myMessage->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
 		// Not necessary with strcpy since uses null-terminated strings
 		// memset(myMessage->msg, 0, IMS_MAX_MSG_SIZE);
 		strcpy (myMessage.msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
@@ -392,15 +326,43 @@ int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
 	*/
 	return SOAP_OK;
 }
+/*###################################################*/
 
 
-int ims__listFriends (struct soap *soap, char * user, char *friends[], int * result) {
-	int pos;
+
+
+
+
+/*################### FRIENDS ######################*/
+int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, int * result) {
+	int pos, i;
+
 	if((pos = checkUsers(user)) != -1) {
 
-		listarAmigos(pos, friends);
+		//listarAmigos(pos, friends);
+		// for(i=0; i<userlist.users[pos].numfriends; i++) {
+		// 	strcpy(friends[i], userlist.users[pos].friends[i]);
+		// }
+		// (*numfriends) = userlist.users[pos].numfriends;
+		friends = (struct Friends *) malloc(sizeof(struct Friends));
 
-		*result = 1;
+		//*friends = userlist.users[pos].friends;
+
+		for(i=0; i<userlist.users[pos].friends.numfriends; i++) {
+			//friends->friends[i] = userlist.users[pos].friends.friends[i];
+			strcpy(friends->friends[i], userlist.users[pos].friends.friends[i]);
+		}
+
+		friends->numfriends = userlist.users[pos].friends.numfriends;
+
+		printf("Listando amigos...\n");
+
+		for(i=0; i<friends->numfriends; i++) {
+			//*friends[i] = userlist.users[pos].friends[i];
+			printf("%s\n", friends->friends[i]);
+			//strcpy(friends[i], userlist.users[pos].friends[i]);
+		}
+		*result = 0;
 	}
 
 	return SOAP_OK;
@@ -408,9 +370,40 @@ int ims__listFriends (struct soap *soap, char * user, char *friends[], int * res
 
 int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * result) {
 
+
+	/* Compruebo si ya lo tengo como amigo */
+	int pos = checkFriend(user, userfriend);
+	int numfriends = userlist.users[pos].friends.numfriends;
+
+	/* Si no esta añadido, lo añado */
+	if(pos == -1) {
+		pos = checkUsers(user);
+		if(numfriends < IMS_MAX_FRIENDS) {
+			strcpy(userlist.users[pos].friends.friends[numfriends], userfriend);
+			userlist.users[pos].friends.numfriends++;
+			(*result) = 0;
+			printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends-1], user);
+		}
+		/* Informo de que no se pueden añadir mas amigos a la lista */
+		else 
+			(*result) = -1;
+	}
+	/* Si ya esta añadido, informo al cliente */
+	else {
+		(*result) = 1;
+	}
+
+
+	return SOAP_OK;
 }
+/*#################################################*/
 
 
+
+
+
+
+/*################### USERS ######################*/
 int ims__newUser (struct soap *soap, char * user, int * result) {
 	
 	// Comprobamos que el usuario existe
@@ -441,9 +434,11 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	else if(userlist.numusers < IMS_MAX_USERS) {
 
 		strcpy(userlist.users[userlist.numusers].name, user);
-		userlist.users[userlist.numusers].numfriends = 0;
+		userlist.users[userlist.numusers].friends.numfriends = 0;
 		userlist.users[userlist.numusers].state = OFFLINE;
 		userlist.numusers++;
+
+		printf("Añadido usuario %s\n", user);
 
 		/* Codigo exito al añadir */
 		(*result) = 0;
@@ -459,14 +454,44 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	return SOAP_OK;
 }
 
+int ims__login (struct soap *soap, char * user, int * result) {
 
+	/* Comprobamos la posicion del usuario en la lista */
+	int pos = checkUsers(user);
+
+
+	/* Si el usuario esta en la lista */
+	if(pos != -1) {
+
+		/* Ponemos el ussuario ONLINE */
+		userlist.users[pos].state = ONLINE;
+		printf("Usuario %s conectado\n", user);
+		(*result) = 0;
+	}
+	/* Si el usuario no esta en la lista */
+	else {
+
+		(*result) = 1;
+	}
+
+	return SOAP_OK;
+}
+
+int ims__logout (struct soap *soap, char * user, int * result) {
+
+}
+
+int ims__listUsers (struct soap *soap, int * result) {
+	(*result) = loadUserList();
+	return SOAP_OK;
+}
 
 int ims__deleteUser (struct soap *soap, char * user, int * result) {
 
 	// Comprobamos que el usuario existe
 	if(checkUsers(user) >= 0) {
 		userlist.users[userlist.numusers].state = DELETED;
-		
+		printf("Usuario %s eliminado\n", user);
 	}
 	else { 
 		printf("El usuario %s no existe\n", &user);
@@ -478,6 +503,7 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 int ims__reactivate(struct soap *soap, char * user, int * result) {
 
 }
+/*###############################################*/
 
 
 

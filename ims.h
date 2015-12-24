@@ -16,10 +16,16 @@ struct Message {
 	char msg[280];
 };
 
+struct Friends {
+	char friends[50][16];
+	int numfriends;
+};
+
 struct User {
 	char name[16];
-	char *friends[50];
-	int numfriends;
+	//char friends[50][16];
+	//int numfriends;
+	struct Friends friends;
 	int state;
 };
 
@@ -34,11 +40,26 @@ struct MessageList {
 };
 
 
-
+/*########## MENSAJES ##########*/
 int ims__sendMessage (struct Message myMessage, int * result);
 int ims__receiveMessage (struct Message * myMessage);
+/*##############################*/
+
+
+
+/*########## USUARIOS ##########*/
 int ims__newUser (char * user, int * result);
 int ims__deleteUser (char * user, int * result);
+int ims__login (char * user, int * result);
+int ims__logout (char * user, int * result);
+int ims__listUsers (int * result);
 int ims__reactivate(char * user, int * result);
-int ims__listFriends (char * user, char * friends[], int * result);
+/*#############################*/
+
+
+
+/*########## AMIGOS ##########*/
+//int ims__listFriends (char * user, char *friends[], int *numfriend, int * result);
+int ims__listFriends (char * user, struct Friends * friends, int * result);
 int ims__newFriend (char * user, char * userfriend, int * result);
+/*############################*/
