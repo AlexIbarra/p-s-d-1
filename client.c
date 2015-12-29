@@ -302,8 +302,10 @@ void newFriend(char *userfriend){
       	soap_print_fault(&soap, stderr); 
 		exit(1);
   	}
-
-  	if(res == 0) {
+	if (res == -2){
+		printf("El usuario %s no existe\n", userfriend);
+	}
+	else if(res == 0) {
   		printf("El usuario %s fue añadido a su lista de amigos\n", userfriend);
   	}
   	else {

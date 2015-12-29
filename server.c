@@ -355,7 +355,7 @@ int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, 
 
 		friends->numfriends = userlist.users[pos].friends.numfriends;
 
-		printf("Listando amigos...\n");
+		printf("Listando amigos de %s...\n", user);
 
 		for(i=0; i<friends->numfriends; i++) {
 			//*friends[i] = userlist.users[pos].friends[i];
@@ -370,27 +370,36 @@ int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, 
 
 int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * result) {
 
+	/* Compruebo que el usuario exista */
+	int pos = checkUsers(userfriend);
+	
+	if (pos != -1){
+		/* Compruebo si ya lo tengo como amigo */
+		int pos = checkFriend(user, userfriend);
+		int numfriends = userlist.users[pos].friends.numfriends;
 
-	/* Compruebo si ya lo tengo como amigo */
-	int pos = checkFriend(user, userfriend);
-	int numfriends = userlist.users[pos].friends.numfriends;
-
-	/* Si no esta añadido, lo añado */
-	if(pos == -1) {
-		pos = checkUsers(user);
-		if(numfriends < IMS_MAX_FRIENDS) {
-			strcpy(userlist.users[pos].friends.friends[numfriends], userfriend);
-			userlist.users[pos].friends.numfriends++;
-			(*result) = 0;
-			printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends-1], user);
+		/* Si no esta añadido, lo añado */
+		if(pos == -1) {
+			pos = checkUsers(user);
+			if(numfriends < IMS_MAX_FRIENDS) {
+				strcpy(userlist.users[pos].friends.friends[numfriends], userfriend);
+				userlist.users[pos].friends.numfriends++;
+				(*result) = 0;
+				//printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends-1], user);
+				printf("Añadido amigo %s al usuario %s\n", userfriend, user);
+			}
+			/* Informo de que no se pueden añadir mas amigos a la lista */
+			else 
+				(*result) = -1;
 		}
-		/* Informo de que no se pueden añadir mas amigos a la lista */
-		else 
-			(*result) = -1;
+		/* Si ya esta añadido, informo al cliente */
+		else {
+			(*result) = 1;
+		}
 	}
-	/* Si ya esta añadido, informo al cliente */
-	else {
-		(*result) = 1;
+	else{
+		//printf("El usuario %s no existe", userfriend);
+		(*result) = -2;
 	}
 
 
