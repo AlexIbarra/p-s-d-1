@@ -484,22 +484,48 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 
 int ims__login (struct soap *soap, char * user, int * result) {
 
+	int pos;
+	int estado;
+	
+
 	/* Comprobamos la posicion del usuario en la lista */
-	int pos = checkUsers(user);
+	pos = checkUsers(user);
 
 
 	/* Si el usuario esta en la lista */
 	if(pos != -1) {
 
-		/* Ponemos el ussuario ONLINE */
-		userlist.users[pos].state = ONLINE;
-		printf("Usuario %s conectado, estado %d\n", user, userlist.users[pos].state);
-		(*result) = 0;
+		// Comprobamos que el usuario existe
+		estado = checkUsersState(user);
+
+
+		/* El usuario ya existe y esta conectado */
+		if(estado == ONLINE) {		
+		
+			/* Codigo ya existe el usuario */
+			(*result) = 1;
+		}/* El usuario ya existe y esta desconectado */
+		else if(estado == OFFLINE) {
+
+			/* Ponemos el ussuario ONLINE */
+			userlist.users[pos].state = ONLINE;
+			printf("Usuario %s conectado, estado %d\n", user, userlist.users[pos].state);
+			(*result) = 0;
+
+		}/* El usuario fue eliminado. Se pregunta por reactivacion */
+		else if(estado == DELETED) {
+
+			/* Codigo usuario borrado */
+			(*result) = -1;
+
+		}
+
+		
 	}
 	/* Si el usuario no esta en la lista */
 	else {
 
-		(*result) = 1;
+		(*result) = -2;
 	}
 
 	return SOAP_OK;
@@ -507,6 +533,25 @@ int ims__login (struct soap *soap, char * user, int * result) {
 
 int ims__logout (struct soap *soap, char * user, int * result) {
 
+	int pos;
+
+	/* Comprobamos la posicion del usuario en la lista */
+	pos = checkUsers(user);
+
+	/* Si el usuario esta en la lista */
+	if(pos != -1) {
+		/* Ponemos el ussuario OFFLINE */
+		userlist.users[pos].state = OFFLINE;
+		printf("Usuario %s desconectado, estado %d\n", user, userlist.users[pos].state);
+		(*result) = 0;
+	}
+	/* Si el usuario no esta en la lista */
+	else {
+
+		(*result) = -1;
+	}
+
+	return SOAP_OK;
 }
 
 int ims__listUsers (struct soap *soap, int * result) {
@@ -520,9 +565,11 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 	// Comprobamos que el usuario existe
 	if((pos = checkUsers(user)) >= 0) {
 		userlist.users[pos].state = -1;
+		(*result) = 0;
 		printf("Usuario %s eliminado\n", userlist.users[pos].name);
 	}
-	else { 
+	else {
+		(*result) = -1;
 		printf("El usuario %s no existe\n", &user);
 	}
 	
@@ -530,7 +577,19 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 }
 
 int ims__reactivate(struct soap *soap, char * user, int * result) {
-
+	int pos;
+	// Comprobamos que el usuario existe
+	if((pos = checkUsers(user)) >= 0) {
+		userlist.users[pos].state = 0;
+		(*result) = 0;
+		printf("Usuario %s reactivado\n", userlist.users[pos].name);
+	}
+	else { 
+		(*result) = -1;
+		printf("El usuario %s no existe\n", &user);
+	}
+	
+	return SOAP_OK;
 }
 /*###############################################*/
 

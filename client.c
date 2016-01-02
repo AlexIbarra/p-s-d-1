@@ -28,6 +28,7 @@ void deleteFriend(char * name);
 void listFriends(char *user);
 void newMessage();
 void listMessages();
+void reactivateUser(char *user);
 
 
 
@@ -85,7 +86,7 @@ int menu(){
 	int value;
 	
 	printf("1) Dar de alta usuario\n");
-	printf("2) Darte de baja");
+	printf("2) Darte de baja\n");
 	printf("3) Listado de amigos\n");
 	printf("4) Anadir nuevo amigo\n");
 	printf("5) Borrar a un amigo\n");
@@ -130,7 +131,7 @@ int gestorMenu(int op) {
 		case 2: // Dar de baja usuario
 			printf("Procediendo a dar de baja al usuario... \n");			
 			deleteUser(conectedUser);
-			logout(conectedUser);
+			status = 0;
 			break;	
 		case 3: //Listar amigos
 			listFriends(conectedUser);
@@ -143,7 +144,7 @@ int gestorMenu(int op) {
 			break;
 		case 5: //Borrar un amigo
 			printf("Introduzca nombre del amigo que quieres eliminar: ");
-			scanf("%s", user)
+			scanf("%s", user);
 			deleteFriend(&user);
 			break;
 		case 6: //Ver mensajes enviados
@@ -158,6 +159,7 @@ int gestorMenu(int op) {
 		case 9: //Cerrar sesion
 			//newUser(&user);
 			// hay que avisar al servidor de que vamos a salir de la sesion
+			logout(conectedUser);
 			status = 0;
 			break;
 		default:
@@ -198,18 +200,13 @@ void newUser(char *user) {
 		printf("Bienvenido %s\n\n", user);
 	}
 	else if(res == -1) { // Usuario eliminado
-		printf("El usuario fue eliminado anteriormente. ¿Desea reactivarlo? (s/n): ");
-		fflush(stdin);
+		printf("El usuario %s ha sido dado de baja\n", user);
+		printf("¿Quiere volver a dar de alta a este usuario? (s/n): ");
 		scanf("%c", option);
-		fflush(stdin);
 		printf("\n");
 
 		if(option == 's') {
-			/* Paedimos al servidor que añada al usuario nuevamente */
-			soap_call_ims__reactivate(&soap, serverURL, "", user, &res);
-
-			if(res == 0)
-				printf("Usuario %s reactivado correctamente\n\n", user);
+			reactivateUser(user);
 		}
 	}
 	else if(res == -2) { // Lista llena
@@ -228,6 +225,13 @@ void deleteUser(char *userdel) {
       	soap_print_fault(&soap, stderr); 
 		exit(1);
   	}
+
+  	if(res == 0) {
+		printf("Usuario %s eliminado correctamente\n", userdel);
+	}
+	else if(res == -1) {
+		printf("El usuario %s no existe\n", userdel);
+	}
 }
 
 void login(char *user) {
@@ -237,7 +241,7 @@ void login(char *user) {
 
 	soap_call_ims__login(&soap, serverURL, "", user, &res);
 
-	if(res == 1) {
+	if(res == -2) {
 
 		printf("El usuario %s no esta dado de alta\n", user);
 		printf("¿Quiere darlo de alta? (s/n): ");
@@ -249,12 +253,57 @@ void login(char *user) {
 			//salimos
 
 	}
-	else
+	else if(res == -1) {
+		printf("El usuario %s ha sido dado de baja\n", user);
+		printf("¿Quiere volver a dar de alta a este usuario? (s/n): ");
+		scanf("%s", opcion);
+		printf("\n");
+
+		if(!strcmp(opcion, "s"))
+			reactivateUser(user);
+	}
+	else if(res == 0)
 		printf("Bienvenido %s\n", user);
+}
+
+void reactivateUser(char *user) {
+
+	int res;
+
+	soap_call_ims__reactivate(&soap, serverURL, "", user, &res);
+
+	// Check for errors...
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
+  	}
+
+	if(res == 0) {
+		printf("Usuario %s reactivado correctamente\n", user);
+	}
+	else if(res == -1) {
+		printf("El usuario %s no existe\n", user);
+	}
 }
 
 void logout(char *user) {
 
+	int res;
+
+	soap_call_ims__logout(&soap, serverURL, "", user, &res);
+
+	// Check for errors...
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
+  	}
+
+	if(res == -1) {
+		printf("El usuario %s no existe\n", user);
+	}
+	else {
+		printf("Hasta pronto %s\n", user);
+	}
 }
 /*##################################*/
 
