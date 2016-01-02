@@ -14,6 +14,7 @@ struct Message {
 	char emisor[16];
 	char receptor[16];
 	char msg[280];
+	int state;
 };
 
 struct Friends {

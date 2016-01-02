@@ -15,9 +15,17 @@ struct MessageList messagelist;
 
 /*### MACROS ###*/
 #define BACKLOG (100)
+
+// USUARIOS
 #define OFFLINE 0
 #define ONLINE 1
 #define DELETED -1
+
+// MENSAJES
+#define SEND 0
+#define READ 1
+
+
 
 
 int checkUsers(char *name);
@@ -177,6 +185,7 @@ int loadMessageList() {
 
 	while((nread = fread(&msgtmp, sizeof(struct Message), 1, fd)) > 0) {
 		messagelist.messages[nummessages] = msgtmp;
+		printf("\t Leyendo emisor %s, receptor %s, mensaje %s, estado %d\n",msgtmp.emisor, msgtmp.receptor, msgtmp.msg, msgtmp.state);
 		nummessages++;
 	}
 
@@ -203,6 +212,7 @@ void guardarMensajes() {
 	}
 
 	for(i=0; i<messagelist.nummessages; i++) {
+		printf("\tGuardando emisor %s, receptor %s, mensaje %s, estado %d\n",messagelist.messages[i].emisor, messagelist.messages[i].receptor, messagelist.messages[i].msg, messagelist.messages[i].state);
 		fwrite(&messagelist.messages[i], sizeof(struct Message), 1, fd);	
 	}
 
@@ -356,7 +366,30 @@ void *process_request(void *soap) {
 /*################### MESSAGES ######################*/
 int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 
-	printf ("Received by server: \n\tusername:%s \n\tmsg:%s\n", myMessage.emisor, myMessage.msg);
+	printf("---##### TRACE ims__sendMessage #####---\n");
+
+	printf ("Received by server: \n\temisor:%s \n\treceptor:%s \n\tmsg:%s\n", myMessage.emisor, myMessage.receptor, myMessage.msg);
+
+	/* Compruebo que el usuario exista */
+	int pos = checkUsers(myMessage.receptor);
+	
+	/* Si el usuario existe */
+	if (pos != -1) {
+
+		/* Copiamos los datos a la lista de mensajes */
+		strcpy(messagelist.messages[messagelist.nummessages].emisor, myMessage.emisor);
+		strcpy(messagelist.messages[messagelist.nummessages].receptor, myMessage.receptor);
+		strcpy(messagelist.messages[messagelist.nummessages].msg, myMessage.msg);
+		messagelist.messages[messagelist.nummessages].state = SEND;
+		messagelist.nummessages++;
+		(*result) = 0;
+	}
+	else {
+		(*result) = -1;
+	}
+
+	printf("---###############################---\n");
+
 	return SOAP_OK;
 }
 

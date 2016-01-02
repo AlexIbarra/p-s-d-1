@@ -154,7 +154,7 @@ int gestorMenu(int op) {
 			//newUser(&user);
 			break;
 		case 8: //Enviar un mensaje
-			//newUser(&user);
+			newMessage(conectedUser);
 			break;
 		case 9: //Cerrar sesion
 			//newUser(&user);
@@ -386,24 +386,25 @@ void deleteFriend(char * name) {
 /*########### TRATAMIENTO DE MENSAJES ###########*/
 void newMessage(char *user){
 	int res;
-	char* receptor;
-	char* message;
+	char receptor[16];
+	char message[280];
 	struct Message msg;
 
-	printf("Escribe el nombre del receptor del mensaje: \n");
-	scanf("%s", &receptor);
+	printf("Escribe el nombre del receptor del mensaje: ");
+	scanf("%s", receptor);
+	printf("Escribe el mensaje (Max 280 caracteres): ");
+	scanf (" %[^\n]", message);
 	fflush(stdin);
-	printf("Escribe el mensaje: (Max 280 caracteres)\n");
-	fgets(message, 280, stdin);
+	//fgets(message, 280, stdin);
 
 	// Guardo el emisor en la estructura
 	strcpy(msg.emisor, user);
 
 	// Guardo el receptor en la estructura
-	strcpy(msg.emisor, receptor);
+	strcpy(msg.receptor, receptor);
 
 	// Guardo el mensaje en la estructura
-	strcpy(msg.emisor, message);
+	strcpy(msg.msg, message);
 
 	soap_call_ims__sendMessage (&soap, serverURL, "", msg, &res);
 
@@ -412,6 +413,13 @@ void newMessage(char *user){
       	soap_print_fault(&soap, stderr); 
 		exit(1);
 		res = 0;
+  	}
+
+  	if(res == 0) {
+  		printf("Mensaje enviado correctamente\n");
+  	}
+  	else {
+  		printf("El usuario %s no existe\n", receptor);
   	}
 }
 
