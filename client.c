@@ -85,7 +85,7 @@ int menu(){
 	int value;
 	
 	printf("1) Dar de alta usuario\n");
-	printf("2) Dar de baja usuario\n");
+	printf("2) Darte de baja");
 	printf("3) Listado de amigos\n");
 	printf("4) Anadir nuevo amigo\n");
 	printf("5) Borrar a un amigo\n");
@@ -128,10 +128,9 @@ int gestorMenu(int op) {
 			printf("\n");
 			break;
 		case 2: // Dar de baja usuario
-			printf("Introduce el nombre del usuario que deseas eliminar: ");
-			scanf("%s", user);			
-			deleteUser(user);
-			printf("\n");
+			printf("Procediendo a dar de baja al usuario... \n");			
+			deleteUser(conectedUser);
+			logout(conectedUser);
 			break;	
 		case 3: //Listar amigos
 			listFriends(conectedUser);
@@ -143,7 +142,9 @@ int gestorMenu(int op) {
 			printf("\n");
 			break;
 		case 5: //Borrar un amigo
-			//newUser(&user);
+			printf("Introduzca nombre del amigo que quieres eliminar: ");
+			scanf("%s", user)
+			deleteFriend(&user);
 			break;
 		case 6: //Ver mensajes enviados
 			//newUser(&user);
@@ -314,6 +315,20 @@ void newFriend(char *userfriend){
 }
 
 void deleteFriend(char * name) {
+
+	int res;
+	soap_call_ims__deleteFriend (&soap, serverURL, "", conectedUser, name, &res);
+	// Check for errors...
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
+  	}	
+	if (res == -1){
+		printf("El usuario %s ha sido eliminado de tu lista de amigos", name);
+	}
+	else{
+		printf("El usuario %s no es tu amigo", name);
+	}
 
 }
 /*############################################*/

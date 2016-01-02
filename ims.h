@@ -21,11 +21,21 @@ struct Friends {
 	int numfriends;
 };
 
+struct Request {
+	char emisor[16];
+	char receptor[16];
+	int state;
+};
+
+struct RequestList {
+	struct Request request[50];
+	int numrequest;
+};
+
 struct User {
 	char name[16];
-	//char friends[50][16];
-	//int numfriends;
 	struct Friends friends;
+	struct RequestList requestlist;
 	int state;
 };
 
@@ -61,5 +71,7 @@ int ims__reactivate(char * user, int * result);
 /*########## AMIGOS ##########*/
 //int ims__listFriends (char * user, char *friends[], int *numfriend, int * result);
 int ims__listFriends (char * user, struct Friends * friends, int * result);
+int ims__listFriendRequest (char * user, struct RequestList * request, int * result);
 int ims__newFriend (char * user, char * userfriend, int * result);
+int ims__deleteFriend (char * user, char * userfriend, int * result);
 /*############################*/

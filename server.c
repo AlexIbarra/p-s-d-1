@@ -105,6 +105,8 @@ int main(int argc, char **argv) {
 
 
 
+
+/*################### GESTION BBDD ######################*/
 int loadUserList() {
 
 	int numusers=0, i=0, j=0;
@@ -119,7 +121,7 @@ int loadUserList() {
 	while((nread = fread(&usertmp, sizeof(struct User), 1, fd)) > 0) {
 		if(usertmp.state != DELETED) {
 			userlist.users[numusers] = usertmp;
-			printf("Leido usuario %s de la BBDD\n",userlist.users[numusers].name);
+			printf("Leido usuario %s con estado %d\n",userlist.users[numusers].name, userlist.users[numusers].state);
 			numusers++;
 		}
 	}
@@ -129,6 +131,28 @@ int loadUserList() {
 	fclose(fd);
 
 	return 1;
+}
+
+void guardarUsuarios() {
+
+	int i=0, j=0;
+
+	FILE *fd = fopen("bbdd/users.txt","w+");
+
+	if(fd == (FILE *)-1) {
+		fprintf(stderr, "Error open\n");
+		exit(1);
+	}
+
+	for(i=0; i<userlist.numusers; i++) {
+		printf("Guardando usuario %s, estado %d\n",userlist.users[i].name, userlist.users[i].state);
+		fwrite(&userlist.users[i], sizeof(struct User), 1, fd);	
+	}
+	
+
+	//fwrite(&userlist.users, sizeof(struct User), userlist.numusers, fd);
+
+	fclose(fd);
 }
 
 int loadMessageList() {
@@ -151,6 +175,54 @@ int loadMessageList() {
 	fclose(fd);
 
 	return 1;
+}
+
+void guardarMensajes() {
+
+	int i=0, j=0;
+
+	FILE *fd = fopen("bbdd/messages.txt","w+");
+
+	if(fd == (FILE *)-1) {
+		fprintf(stderr, "Error open\n");
+		exit(1);
+	}
+
+	for(i=0; i<messagelist.nummessages; i++) {
+		fwrite(&messagelist.messages[i], sizeof(struct Message), 1, fd);	
+	}
+
+	//fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
+
+	fclose(fd);
+}
+/*#######################################################*/
+
+
+
+
+// Handler para la señal Cntrl + C 
+void salir(int senal){
+
+	int i;
+	fflush (stdout);
+	switch(senal){
+		case SIGINT:
+			printf("\nCerrando servidor...\n");
+
+			/*for(i = 0; i< userlist.contador ; i++){
+				if(userlist.listaUsuarios[i].estado == ONLINE){
+					userlist.listaUsuarios[i].estado = OFFLINE;
+				}
+			}
+
+			guardarListaUsuarios();*/
+			guardarUsuarios();
+			guardarMensajes();
+			exit(1);
+		break;
+	}
+
 }
 
 int checkUsers(char *name) {
@@ -199,38 +271,6 @@ int checkFriend(char *user, char *name) {
 	return -1;
 }
 
-void guardarUsuarios() {
-
-	int i=0, j=0;
-
-	FILE *fd = fopen("bbdd/users.txt","w+");
-
-	if(fd == (FILE *)-1) {
-		fprintf(stderr, "Error open\n");
-		exit(1);
-	}
-
-	fwrite(&userlist.users, sizeof(struct User), userlist.numusers, fd);
-
-	fclose(fd);
-}
-
-void guardarMensajes() {
-
-	int i=0, j=0;
-
-	FILE *fd = fopen("bbdd/messages.txt","w+");
-
-	if(fd == (FILE *)-1) {
-		fprintf(stderr, "Error open\n");
-		exit(1);
-	}
-
-	fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
-
-	fclose(fd);
-}
-
 void listarAmigos(int pos, char *friends[]) {
 
 	int i=0;
@@ -246,35 +286,6 @@ void listarAmigos(int pos, char *friends[]) {
 	//*friends = (char*)userlist.users[pos].friends;
 
 }
-
-
-
-// Handler para la señal Cntrl + C 
-
-void salir(int senal){
-
-	int i;
-	fflush (stdout);
-	switch(senal){
-		case SIGINT:
-			printf("\nCerrando servidor...\n");
-
-			/*for(i = 0; i< userlist.contador ; i++){
-				if(userlist.listaUsuarios[i].estado == ONLINE){
-					userlist.listaUsuarios[i].estado = OFFLINE;
-				}
-			}
-
-			guardarListaUsuarios();*/
-			guardarUsuarios();
-			guardarMensajes();
-			exit(1);
-		break;
-	}
-
-}
-
-
 
 void *process_request(void *soap) { 
 
@@ -368,6 +379,10 @@ int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, 
 	return SOAP_OK;
 }
 
+int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList * request, int * result) {
+
+}
+
 int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * result) {
 
 	/* Compruebo que el usuario exista */
@@ -404,6 +419,10 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 
 
 	return SOAP_OK;
+}
+
+int ims__deleteFriend (struct soap *soap, char * user, char * userfriend, int * result) {
+
 }
 /*#################################################*/
 
@@ -474,7 +493,7 @@ int ims__login (struct soap *soap, char * user, int * result) {
 
 		/* Ponemos el ussuario ONLINE */
 		userlist.users[pos].state = ONLINE;
-		printf("Usuario %s conectado\n", user);
+		printf("Usuario %s conectado, estado %d\n", user, userlist.users[pos].state);
 		(*result) = 0;
 	}
 	/* Si el usuario no esta en la lista */
@@ -497,10 +516,11 @@ int ims__listUsers (struct soap *soap, int * result) {
 
 int ims__deleteUser (struct soap *soap, char * user, int * result) {
 
+	int pos;
 	// Comprobamos que el usuario existe
-	if(checkUsers(user) >= 0) {
-		userlist.users[userlist.numusers].state = DELETED;
-		printf("Usuario %s eliminado\n", user);
+	if((pos = checkUsers(user)) >= 0) {
+		userlist.users[pos].state = -1;
+		printf("Usuario %s eliminado\n", userlist.users[pos].name);
 	}
 	else { 
 		printf("El usuario %s no existe\n", &user);
