@@ -53,7 +53,7 @@ struct MessageList {
 
 /*########## MENSAJES ##########*/
 int ims__sendMessage (struct Message myMessage, int * result);
-int ims__receiveMessage (struct Message * myMessage);
+int ims__receiveMessage (char * user, struct MessageList * myListMessage, int *result);
 /*##############################*/
 
 

@@ -261,14 +261,16 @@ int checkUsers(char *name) {
 
 	int i = 0;
 	int pos = -1;
+	int encontrado=0;
 
-	for(i=0; i < userlist.numusers; i++){
+	while(i < userlist.numusers && !encontrado){
 		printf("\tCheckeado usuario %s\n", userlist.users[i].name);
 		if(strcmp(userlist.users[i].name,name)==0){
 			printf("\tEncontrado usuario --> %s\n", userlist.users[i].name);
 			pos = i;
+			encontrado = 1;
 		}
-
+		i++;
 	}
 
 	printf("\t---###############################---\n");
@@ -303,15 +305,18 @@ int checkFriend(char *user, char *name) {
 	int i = 0;
 	int tmp = -1;
 	int pos = checkUsers(user);
+	int encontrado=0;
 
 	/* Busco en la lista de amigos del usuario */
-	for(i=0; i < userlist.users[pos].friends.numfriends; i++){
+	while(i< userlist.users[pos].friends.numfriends && !encontrado){
 		
 		/* Si se encuentra en mi lista de amigos, retorno la posicion */
 		if(strcmp(userlist.users[pos].friends.friends[i],name)==0) {
+			printf("Encontrado amigo %s\n", userlist.users[pos].friends.friends[i]);
 			tmp = i;
+			encontrado = 1;
 		}
-
+		i++;
 	}
 
 	printf("\t---###############################---\n");
@@ -393,20 +398,10 @@ int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 	return SOAP_OK;
 }
 
-int ims__receiveMessage (struct soap *soap, struct Message *myMessage){
-	/*
-		// Allocate space for the message field of the myMessage struct then copy it
-		myMessage->msg = (xsd__string) malloc (IMS_MAX_MSG_SIZE);
-		// Not necessary with strcpy since uses null-terminated strings
-		// memset(myMessage->msg, 0, IMS_MAX_MSG_SIZE);
-		strcpy (myMessage.msg, "Invoking the remote function receiveMessage simply retrieves this standard message from the server"); // always same msg
+int ims__receiveMessage (struct soap *soap, char * user, struct MessageList * myListMessage, int *result){
+	
 
-		// Allocate space for the name field of the myMessage struct then copy it
-		myMessage.name = (xsd__string) malloc (IMS_MAX_NAME_SIZE);
-		// Not necessary with strcpy since uses null-terminated strings
-		// memset(myMessage->name, 0, IMS_MAX_NAME_SIZE);  
-		strcpy(myMessage.name, "aServer");	
-	*/
+
 	return SOAP_OK;
 }
 /*###################################################*/
@@ -425,29 +420,23 @@ int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, 
 
 	if((pos = checkUsers(user)) != -1) {
 
-		//listarAmigos(pos, friends);
-		// for(i=0; i<userlist.users[pos].numfriends; i++) {
-		// 	strcpy(friends[i], userlist.users[pos].friends[i]);
-		// }
-		// (*numfriends) = userlist.users[pos].numfriends;
 		friends = (struct Friends *) malloc(sizeof(struct Friends));
 
-		//*friends = userlist.users[pos].friends;
+		(*friends) = userlist.users[pos].friends;
 
-		for(i=0; i<userlist.users[pos].friends.numfriends; i++) {
+		/*for(i=0; i<userlist.users[pos].friends.numfriends; i++) {
 			//friends->friends[i] = userlist.users[pos].friends.friends[i];
-			strcpy(friends->friends[i], userlist.users[pos].friends.friends[i]);
-		}
+			strcpy((*friends).friends[i], userlist.users[pos].friends.friends[i]);
+		}*/
 
-		friends->numfriends = userlist.users[pos].friends.numfriends;
+		//(*friends).numfriends = userlist.users[pos].friends.numfriends;
 
 		printf("Listando amigos de %s...\n", user);
 
-		for(i=0; i<friends->numfriends; i++) {
-			//*friends[i] = userlist.users[pos].friends[i];
-			printf("%s\n", friends->friends[i]);
-			//strcpy(friends[i], userlist.users[pos].friends[i]);
+		for(i=0; i<(*friends).numfriends; i++) {
+			printf("%s\n", (*friends).friends[i]);
 		}
+
 		*result = 0;
 	}
 
@@ -464,24 +453,32 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 
 	printf("---##### TRACE ims__newFriend #####---\n");
 
+	int numfriends;
+	int posF;
+
 	/* Compruebo que el usuario exista */
 	int pos = checkUsers(userfriend);
 	
-	if (pos != -1){
+	if (pos != -1) {
+
 		/* Compruebo si ya lo tengo como amigo */
-		int pos = checkFriend(user, userfriend);
-		int numfriends = userlist.users[pos].friends.numfriends;
+		posF = checkFriend(user, userfriend);
+		
 
 		/* Si no esta añadido, lo añado */
-		if(pos == -1) {
+		if(posF == -1) {
 
 			pos = checkUsers(user);
+			numfriends = userlist.users[pos].friends.numfriends;
+
+			/* Compruebo que tengo sitio para otro amigo */
 			if(numfriends < IMS_MAX_FRIENDS) {
+
 				strcpy(userlist.users[pos].friends.friends[numfriends], userfriend);
 				userlist.users[pos].friends.numfriends++;
 				(*result) = 0;
-				//printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends-1], user);
-				printf("Añadido amigo %s al usuario %s\n", userfriend, user);
+				printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends], user);
+				printf("Numero de amigos %d\n", userlist.users[pos].friends.numfriends);
 			}
 			/* Informo de que no se pueden añadir mas amigos a la lista */
 			else 

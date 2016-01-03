@@ -312,11 +312,8 @@ void logout(char *user) {
 void listFriends(char *user){
 	
 	int res, i;
-	//int numfriends;
 	struct Friends friends;
-	//char friends[IMS_MAX_FRIENDS][IMS_MAX_NAME_SIZE];
 
-	//soap_call_ims__listFriends (&soap, serverURL, "", user, friends, &numfriends, &res);
 	//friends = (struct Friends *) malloc(sizeof(struct Friends));
 
 	soap_call_ims__listFriends (&soap, serverURL, "", user, &friends, &res);
@@ -330,15 +327,6 @@ void listFriends(char *user){
   	if(res == 0) {
 
   		printf("Numero de amigos %d\n", friends.numfriends);
-  		// if(friends->numfriends < 1)
-  		// 	printf("No tienes amigos --> %d\n", friends.numfriends);
-  		// else {
-  		// 	printf("Los amigos de %s son:\n", user);
-	  	// 	for(i=0; i<friends.numfriends; i++) {
-	  	// 		printf("- %s\n", friends.friends[i]);
-	  	// 		//printf("%d\n", i);
-	  	// 	}
-	  	// }
   	}
 }
 
@@ -423,7 +411,9 @@ void newMessage(char *user){
   	}
 }
 
-void listMessages() {}
+void listMessages() {
+
+}
 /*###############################################*/
 
 
