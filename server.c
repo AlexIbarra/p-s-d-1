@@ -12,6 +12,7 @@
 // Listas globales de usuarios y mensajes
 struct UsersList userlist;
 struct MessageList messagelist;
+struct RequestList requestlist;
 
 /*### MACROS ###*/
 #define BACKLOG (100)
@@ -219,6 +220,57 @@ void guardarMensajes() {
 	for(i=0; i<messagelist.nummessages; i++) {
 		printf("\tGuardando emisor %s, receptor %s, mensaje %s, estado %d\n",messagelist.messages[i].emisor, messagelist.messages[i].receptor, messagelist.messages[i].msg, messagelist.messages[i].state);
 		fwrite(&messagelist.messages[i], sizeof(struct Message), 1, fd);	
+	}
+
+	//fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
+
+	fclose(fd);
+
+	printf("\t---###############################---\n");
+}
+
+int loadRequestList(){
+
+	printf("---##### TRACE loadRequestList #####---\n");
+
+	int numrequest=0, i=0;
+	int nread;
+	struct Request rqstmp;
+
+
+	FILE *fd = fopen("bbdd/request.txt","r+");
+
+	while((nread = fread(&rqstmp, sizeof(struct Request), 1, fd)) > 0) {
+		requestlist.request[numrequest] = rqstmp;
+		printf("\t Leyendo emisor %s, receptor %s,estado %d\n",rqstmp.emisor, rqstmp.receptor, rqstmp.state);
+		numrequest++;
+	}
+
+	requestlist.numrequest = numrequest;
+
+	fclose(fd);
+
+	printf("---###############################---\n");
+
+	return 1;
+}
+
+void guardarRequestList() {
+
+	printf("\t---##### TRACE guardarPeticiones #####---\n");
+
+	int i=0, j=0;
+
+	FILE *fd = fopen("bbdd/request.txt","w+");
+
+	if(fd == (FILE *)-1) {
+		fprintf(stderr, "\tError open\n");
+		exit(1);
+	}
+
+	for(i=0; i<requestlist.numrequest; i++) {
+		printf("\tGuardando emisor %s, receptor %s, estado %d\n",requestlist.request[i].emisor, requestlist.request[i].receptor,  requestlist.request[i].state);
+		fwrite(&requestlist.request[i], sizeof(struct Request), 1, fd);	
 	}
 
 	//fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
@@ -452,11 +504,42 @@ int ims__listFriends (struct soap *soap, char * user, struct ListFriends * frien
 }
 
 int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList * request) {
+/*
+	printf("---##### TRACE ims__listFriendRequest #####---\n");
 
+	int pos, i;
+
+	if((pos = checkUsers(user)) != -1) {
+
+		for(i=0; i<requestlist.numrequest; i++) {
+			if(requestlist.request[i].receptor = user)
+			//	strcpy((*request).requestlist[i].emisor, requestlist.u[pos].fList.listfriends[i].friends);
+		}
+
+		(*request).numrequest = requestlist.users[pos].fList.numfriends;
+
+		printf("Numero de amigos %d\n", (*friends).numfriends);
+		printf("Listando amigos de %s...\n", user);
+
+		for(i=0; i<(*friends).numfriends; i++) {
+			printf(">%s : %d\n", (*friends).listfriends[i].friends, (*friends).listfriends[i].state);
+		}
+
+		(*friends).result = 0;
+	}
+	else {
+
+		(*friends).result = -1;
+	}
+
+	printf("---###############################---\n");
+
+	return SOAP_OK;*/
 }
 
 int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * result) {
 
+	
 	printf("---##### TRACE ims__newFriend #####---\n");
 
 	int numfriends;
@@ -471,28 +554,18 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 		posF = checkFriend(user, userfriend);
 		
 
-		/* Si no esta añadido, lo añado */
+		/* Si no esta añadido, creo una nueva petición de amistad */
 		if(posF == -1) {
-
-			pos = checkUsers(user);
-			numfriends = userlist.users[pos].fList.numfriends;
-
-			/* Compruebo que tengo sitio para otro amigo */
-			if(numfriends < IMS_MAX_FRIENDS) {
-
-				strcpy(userlist.users[pos].fList.listfriends[numfriends].friends, userfriend);
-				userlist.users[pos].fList.numfriends++;
-				(*result) = 0;
-				printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].fList.listfriends[numfriends].friends, user);
-				printf("Numero de amigos %d\n", userlist.users[pos].fList.numfriends);
+			strcpy(requestlist.request[requestlist.numrequest].emisor, user);
+			strcpy(requestlist.request[requestlist.numrequest].receptor, userfriend);
+			requestlist.numrequest ++;
+			
 			}
 			/* Informo de que no se pueden añadir mas amigos a la lista */
-			else 
-				(*result) = -1;
-		}
+	
 		/* Si ya esta añadido, informo al cliente */
 		else {
-			(*result) = 1;
+			(*result) = 0;
 		}
 	}
 	else{

@@ -26,6 +26,7 @@ void logout(char *user);
 void newFriend(char *userfriend);
 void deleteFriend(char * name);
 void listFriends(char *user);
+void listRequest(char *user);
 void newMessage();
 void listMessages();
 void reactivateUser(char *user);
@@ -90,12 +91,13 @@ int menu(){
 	printf("1) Dar de alta usuario\n");
 	printf("2) Darte de baja\n");
 	printf("3) Listado de amigos\n");
-	printf("4) Anadir nuevo amigo\n");
+	printf("4) Enviar solicitud de amistad\n");
 	printf("5) Borrar a un amigo\n");
 	printf("6) Ver mensajes enviados\n");
 	printf("7) Ver mensajes recibidos\n");
 	printf("8) Enviar un mensaje\n");
 	printf("9) Cerrar sesion\n");
+	printf("0) Ver/aceptar solicitudes de amistad\n");
 	printf("Opcion: ");
 	
 	scanf("%s", opcion);
@@ -163,6 +165,9 @@ int gestorMenu(int op) {
 			// hay que avisar al servidor de que vamos a salir de la sesion
 			logout(conectedUser);
 			status = 0;
+			break;
+		case 0: //Ver solicitudes de amistad
+			listRequest(conectedUser);
 			break;
 		default:
 			printf("Opcion incorrecta!!!\n");
@@ -377,6 +382,30 @@ void deleteFriend(char * name) {
 	else if(res == -2) {
 		printf("El usuario %s no esta en tu lista de amigos\n", name);
 	}
+}
+
+void listRequest(char *user){
+
+	int res, i;
+	struct RequestList request;
+
+	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &request);
+
+	// Check for errors...
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
+  	}
+
+  	if(request.result == 0) {
+
+  		printf("Numero de peticiones %d\n", request.numrequest);
+
+  		for(i=0; i<request.numrequest; i++) {
+  			//if(friends.listfriends[i].state != -1)
+			printf("%d >%s : %d\n", i ,request.request[i].emisor, request.request[i].state);
+		}
+  	}
 }
 /*############################################*/
 
