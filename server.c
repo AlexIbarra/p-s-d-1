@@ -38,6 +38,7 @@ int checkUsers(char *name);
 int checkUsersState(char *name);
 int loadUserList();
 int loadMessageList();
+int loadRequestList();
 void salir(int senal);
 
 
@@ -77,6 +78,10 @@ int main(int argc, char **argv) {
 		}
 
 		fprintf(stderr, "Socket connection successful %d\n", m); 
+
+		// Inicializamos la lista de peticiones
+		 loadRequestList();
+
 
 		// Cargamos lus usuarios guardados en disco
 		 loadUserList();
