@@ -30,6 +30,8 @@ void newMessage();
 void listMessages();
 void reactivateUser(char *user);
 
+void loqsea(struct ListFriends * f);
+
 
 
 
@@ -145,7 +147,7 @@ int gestorMenu(int op) {
 		case 5: //Borrar un amigo
 			printf("Introduzca nombre del amigo que quieres eliminar: ");
 			scanf("%s", user);
-			deleteFriend(&user);
+			deleteFriend(user);
 			break;
 		case 6: //Ver mensajes enviados
 			//newUser(&user);
@@ -309,14 +311,13 @@ void logout(char *user) {
 
 
 /*########### TRATAMIENTO DE AMIGOS ###########*/
+
 void listFriends(char *user){
 	
 	int res, i;
-	struct Friends friends;
+	struct ListFriends friends;
 
-	//friends = (struct Friends *) malloc(sizeof(struct Friends));
-
-	soap_call_ims__listFriends (&soap, serverURL, "", user, &friends, &res);
+	soap_call_ims__listFriends (&soap, serverURL, "", user, &friends);
 
 	// Check for errors...
   	if (soap.error) {
@@ -324,9 +325,14 @@ void listFriends(char *user){
 		exit(1);
   	}
 
-  	if(res == 0) {
+  	if(friends.result == 0) {
 
   		printf("Numero de amigos %d\n", friends.numfriends);
+
+  		for(i=0; i<friends.numfriends; i++) {
+  			//if(friends.listfriends[i].state != -1)
+				printf(">%s : %d\n", friends.listfriends[i].friends, friends.listfriends[i].state);
+		}
   	}
 }
 
@@ -355,18 +361,22 @@ void deleteFriend(char * name) {
 
 	int res;
 	soap_call_ims__deleteFriend (&soap, serverURL, "", conectedUser, name, &res);
+
 	// Check for errors...
   	if (soap.error) {
       	soap_print_fault(&soap, stderr); 
 		exit(1);
-  	}	
-	if (res == -1){
-		printf("El usuario %s ha sido eliminado de tu lista de amigos", name);
-	}
-	else{
-		printf("El usuario %s no es tu amigo", name);
-	}
+  	}
 
+	if (res == 0){
+		printf("El usuario %s ha sido eliminado de tu lista de amigos\n", name);
+	}
+	else if(res == -1) {
+		printf("El usuario %s no existe\n", name);
+	}
+	else if(res == -2) {
+		printf("El usuario %s no esta en tu lista de amigos\n", name);
+	}
 }
 /*############################################*/
 
@@ -411,7 +421,22 @@ void newMessage(char *user){
   	}
 }
 
-void listMessages() {
+void listMessages(char *user) {
+
+	struct MessageList mList;
+
+	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &mList);
+
+	// Check for errors...
+  	if (soap.error) {
+      	soap_print_fault(&soap, stderr); 
+		exit(1);
+  	}
+
+  	/* Muestro los mensajes del usuario */
+  	if(mList.result == 0) {
+
+  	}
 
 }
 /*###############################################*/

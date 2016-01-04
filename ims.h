@@ -17,9 +17,20 @@ struct Message {
 	int state;
 };
 
-struct Friends {
+/*struct Friends {
 	char friends[50][16];
 	int numfriends;
+};*/
+
+struct Friend {
+	char friends[16]; 	// nombre del amigo
+	int state; 			// estado de la amistad (aceptada/pendiente/eliminada) --> mas facil para borrar amigos
+};
+
+struct ListFriends {
+	struct Friend listfriends[50]; 	// lista de amigos (50 max)
+	int numfriends;					// numeros de amigos hasta el momento
+	int result;			// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
 
 struct Request {
@@ -31,11 +42,12 @@ struct Request {
 struct RequestList {
 	struct Request request[50];
 	int numrequest;
+	int result;	// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
 
 struct User {
 	char name[16];
-	struct Friends friends;
+	struct ListFriends fList;
 	struct RequestList requestlist;
 	int state;
 };
@@ -48,12 +60,13 @@ struct UsersList {
 struct MessageList {
 	struct Message messages[1000];
 	int nummessages;
+	int result;	// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
 
 
 /*########## MENSAJES ##########*/
 int ims__sendMessage (struct Message myMessage, int * result);
-int ims__receiveMessage (char * user, struct MessageList * myListMessage, int *result);
+int ims__receiveMessage (char * user, struct MessageList * myListMessage);
 /*##############################*/
 
 
@@ -70,9 +83,8 @@ int ims__reactivate(char * user, int * result);
 
 
 /*########## AMIGOS ##########*/
-//int ims__listFriends (char * user, char *friends[], int *numfriend, int * result);
-int ims__listFriends (char * user, struct Friends * friends, int * result);
-int ims__listFriendRequest (char * user, struct RequestList * request, int * result);
+int ims__listFriends (char * user, struct ListFriends * friends);
+int ims__listFriendRequest (char * user, struct RequestList * request);
 int ims__newFriend (char * user, char * userfriend, int * result);
 int ims__deleteFriend (char * user, char * userfriend, int * result);
 /*############################*/

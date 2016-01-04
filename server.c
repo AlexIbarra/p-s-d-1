@@ -25,6 +25,11 @@ struct MessageList messagelist;
 #define SEND 0
 #define READ 1
 
+// AMIGOS
+#define DELFRIEND -1
+#define ACEPTEDFRIEND 1
+#define PENDINGFRIEND 0
+
 
 
 
@@ -308,11 +313,11 @@ int checkFriend(char *user, char *name) {
 	int encontrado=0;
 
 	/* Busco en la lista de amigos del usuario */
-	while(i< userlist.users[pos].friends.numfriends && !encontrado){
+	while(i< userlist.users[pos].fList.numfriends && !encontrado){
 		
 		/* Si se encuentra en mi lista de amigos, retorno la posicion */
-		if(strcmp(userlist.users[pos].friends.friends[i],name)==0) {
-			printf("Encontrado amigo %s\n", userlist.users[pos].friends.friends[i]);
+		if(strcmp(userlist.users[pos].fList.listfriends[i].friends,name)==0) {
+			printf("Encontrado amigo %s\n", userlist.users[pos].fList.listfriends[i].friends);
 			tmp = i;
 			encontrado = 1;
 		}
@@ -325,7 +330,7 @@ int checkFriend(char *user, char *name) {
 	return tmp;
 }
 
-void listarAmigos(int pos, char *friends[]) {
+/*void listarAmigos(int pos, char *friends[]) {
 
 	int i=0;
 
@@ -339,7 +344,7 @@ void listarAmigos(int pos, char *friends[]) {
 	
 	//*friends = (char*)userlist.users[pos].friends;
 
-}
+}*/
 
 void *process_request(void *soap) { 
 
@@ -398,7 +403,7 @@ int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 	return SOAP_OK;
 }
 
-int ims__receiveMessage (struct soap *soap, char * user, struct MessageList * myListMessage, int *result){
+int ims__receiveMessage (struct soap *soap, char * user, struct MessageList * myListMessage){
 	
 
 
@@ -412,32 +417,33 @@ int ims__receiveMessage (struct soap *soap, char * user, struct MessageList * my
 
 
 /*################### FRIENDS ######################*/
-int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, int * result) {
+int ims__listFriends (struct soap *soap, char * user, struct ListFriends * friends) {
 
 	printf("---##### TRACE ims__listFriends #####---\n");
 
 	int pos, i;
 
+
 	if((pos = checkUsers(user)) != -1) {
 
-		friends = (struct Friends *) malloc(sizeof(struct Friends));
+		for(i=0; i<userlist.users[pos].fList.numfriends; i++) {
+			strcpy((*friends).listfriends[i].friends, userlist.users[pos].fList.listfriends[i].friends);
+		}
 
-		(*friends) = userlist.users[pos].friends;
+		(*friends).numfriends = userlist.users[pos].fList.numfriends;
 
-		/*for(i=0; i<userlist.users[pos].friends.numfriends; i++) {
-			//friends->friends[i] = userlist.users[pos].friends.friends[i];
-			strcpy((*friends).friends[i], userlist.users[pos].friends.friends[i]);
-		}*/
-
-		//(*friends).numfriends = userlist.users[pos].friends.numfriends;
-
+		printf("Numero de amigos %d\n", (*friends).numfriends);
 		printf("Listando amigos de %s...\n", user);
 
 		for(i=0; i<(*friends).numfriends; i++) {
-			printf("%s\n", (*friends).friends[i]);
+			printf(">%s : %d\n", (*friends).listfriends[i].friends, (*friends).listfriends[i].state);
 		}
 
-		*result = 0;
+		(*friends).result = 0;
+	}
+	else {
+
+		(*friends).result = -1;
 	}
 
 	printf("---###############################---\n");
@@ -445,7 +451,7 @@ int ims__listFriends (struct soap *soap, char * user, struct Friends * friends, 
 	return SOAP_OK;
 }
 
-int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList * request, int * result) {
+int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList * request) {
 
 }
 
@@ -469,16 +475,16 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 		if(posF == -1) {
 
 			pos = checkUsers(user);
-			numfriends = userlist.users[pos].friends.numfriends;
+			numfriends = userlist.users[pos].fList.numfriends;
 
 			/* Compruebo que tengo sitio para otro amigo */
 			if(numfriends < IMS_MAX_FRIENDS) {
 
-				strcpy(userlist.users[pos].friends.friends[numfriends], userfriend);
-				userlist.users[pos].friends.numfriends++;
+				strcpy(userlist.users[pos].fList.listfriends[numfriends].friends, userfriend);
+				userlist.users[pos].fList.numfriends++;
 				(*result) = 0;
-				printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].friends.friends[numfriends], user);
-				printf("Numero de amigos %d\n", userlist.users[pos].friends.numfriends);
+				printf("Añadido amigo %s al usuario %s\n", userlist.users[pos].fList.listfriends[numfriends].friends, user);
+				printf("Numero de amigos %d\n", userlist.users[pos].fList.numfriends);
 			}
 			/* Informo de que no se pueden añadir mas amigos a la lista */
 			else 
@@ -500,6 +506,42 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 }
 
 int ims__deleteFriend (struct soap *soap, char * user, char * userfriend, int * result) {
+
+
+	printf("---##### TRACE ims__deleteFriend #####---\n");
+
+	int posF;
+	/* Compruebo que el usuario exista */
+	int pos = checkUsers(userfriend);
+	
+	if (pos != -1) {
+
+		/* Busco la posicion del usuario */
+		pos = checkUsers(user);
+
+		/* Compruebo que esta en la lista de amigos */
+		posF = checkFriend(user, userfriend);
+
+		if(posF != -1) {
+
+			/* Marcamos al amigo como eliminado */
+			userlist.users[pos].fList.listfriends[posF].state = DELFRIEND;
+
+			printf("Eliminado amigo %s, estado %d\n", userlist.users[pos].fList.listfriends[posF].friends, userlist.users[pos].fList.listfriends[posF].state);
+		}
+		/* No es amigo */
+		else {
+			(*result) = -2;
+		}
+	}
+	/* El amigo que quiere eliminar no existe */
+	else {
+		(*result) = -1;
+	}
+
+	printf("---###############################---\n");
+
+	return SOAP_OK;
 
 }
 /*#################################################*/
@@ -542,7 +584,7 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	else if(userlist.numusers < IMS_MAX_USERS) {
 
 		strcpy(userlist.users[userlist.numusers].name, user);
-		userlist.users[userlist.numusers].friends.numfriends = 0;
+		userlist.users[userlist.numusers].fList.numfriends = 0;
 		userlist.users[userlist.numusers].state = OFFLINE;
 		userlist.numusers++;
 
