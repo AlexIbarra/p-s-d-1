@@ -400,10 +400,12 @@ void deleteFriend(char * name) {
 
 void listRequest(char *user){
 
-	int res, i;
-	struct RequestList request;
+	int res, i, value;
+	char op;
+	char * opcion;
+	struct RequestList requestlist;
 
-	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &request);
+	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &requestlist);
 
 	// Check for errors...
   	if (soap.error) {
@@ -417,9 +419,37 @@ void listRequest(char *user){
 
   		for(i=0; i<request.numrequest; i++) {
   			//if(friends.listfriends[i].state != -1)
-			printf("%d >%s : %d\n", i ,request.request[i].emisor, request.request[i].state);
+			printf("%d > %s : %d\n", i ,request.request[i].emisor, request.request[i].state);
 		}
   	}
+  	
+  	
+  	//Ahora gestionamos el tema de aceptarlas
+  	printf("Introduce el número de la petición que quieres tratar: ");
+  	scanf("%s", opcion);
+	value = atoi(opcion);
+	
+	printf("¿Aceptar (a) o rechazar (r)? a/r: ");
+	scanf("%c", op);
+	
+	if(op == 'a' || op == 'A'){
+		//Enviamos la petición al servidor para que lo acepte:
+		soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+		if (soap.error) {
+		  soap_print_fault(&soap, stderr); 
+		  exit(1);
+		}
+	}
+	else if (op == 'r' || op == 'R'){
+			soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+			if (soap.error) {
+			  soap_print_fault(&soap, stderr); 
+			  exit(1);
+			}
+	}
+		else
+			printf("Opción incorrecta \n");
+  	
 }
 /*############################################*/
 
