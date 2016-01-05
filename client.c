@@ -28,7 +28,7 @@ void deleteFriend(char * name);
 void listFriends(char *user);
 void listRequest(char *user);
 void newMessage();
-void listMessages();
+void listPendingMessages();
 void reactivateUser(char *user);
 
 void loqsea(struct ListFriends * f);
@@ -413,42 +413,58 @@ void listRequest(char *user){
 		exit(1);
   	}
 
-  	if(request.result == 0) {
+  	if(requestlist.result == 0) {
 
-  		printf("Numero de peticiones %d\n", request.numrequest);
+  		printf("Numero de peticiones %d:\n", requestlist.numrequest);
 
-  		for(i=0; i<request.numrequest; i++) {
+  		for(i=0; i<requestlist.numrequest; i++) {
   			//if(friends.listfriends[i].state != -1)
-			printf("%d > %s : %d\n", i ,request.request[i].emisor, request.request[i].state);
+			printf("%d) > %s : %d\n", i ,requestlist.request[i].emisor, requestlist.request[i].state);
 		}
   	}
   	
   	
   	//Ahora gestionamos el tema de aceptarlas
-  	printf("Introduce el número de la petición que quieres tratar: ");
+  	printf("Introduce el número de la petición que quieres tratar o pusla (s) para salir: ");
   	scanf("%s", opcion);
-	value = atoi(opcion);
-	
-	printf("¿Aceptar (a) o rechazar (r)? a/r: ");
-	scanf("%c", op);
-	
-	if(op == 'a' || op == 'A'){
-		//Enviamos la petición al servidor para que lo acepte:
-		soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
-		if (soap.error) {
-		  soap_print_fault(&soap, stderr); 
-		  exit(1);
-		}
-	}
-	else if (op == 'r' || op == 'R'){
-			soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
-			if (soap.error) {
-			  soap_print_fault(&soap, stderr); 
-			  exit(1);
+
+  	if(strcmp(opcion, "s")) {
+
+		value = atoi(opcion);
+
+		printf("\n");
+		
+		printf("¿Aceptar (a) o rechazar (r)?");
+		scanf("%c", op);
+
+		do {
+		
+			if(op == 'a' || op == 'A'){
+				//Enviamos la petición al servidor para que lo acepte:
+				soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+
+				if (soap.error) {
+				  soap_print_fault(&soap, stderr); 
+				  exit(1);
+				}
 			}
+			else if (op == 'r' || op == 'R'){
+
+					soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+
+					if (soap.error) {
+					  soap_print_fault(&soap, stderr); 
+					  exit(1);
+					}
+			}
+			else {
+				printf("Opción incorrecta \n");
+				printf("¿Aceptar (a) o rechazar (r)? a/r: ");
+				scanf("%c", op);
+			}
+
+		} while(op != 'a' && op != 'A' && op != 'r' && op != 'R');
 	}
-		else
-			printf("Opción incorrecta \n");
   	
 }
 /*############################################*/
@@ -489,16 +505,20 @@ void newMessage(char *user){
   	if(res == 0) {
   		printf("Mensaje enviado correctamente\n");
   	}
-  	else {
+  	else if(res == -1) {
   		printf("El usuario %s no existe\n", receptor);
+  	}
+  	else if(res == -2) {
+  		printf("Lo sentimos pero el usuario %s no esta en su lista de amigos\n", receptor);
   	}
 }
 
-void listMessages(char *user) {
+void listPendingMessages(char *user) {
 
 	struct MessageList mList;
+	int state = 0;
 
-	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &mList);
+	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &state, &mList);
 
 	// Check for errors...
   	if (soap.error) {

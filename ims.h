@@ -10,17 +10,7 @@
 typedef char *xsd__string;
 
 
-struct Message {
-	char emisor[16];
-	char receptor[16];
-	char msg[280];
-	int state;
-};
 
-/*struct Friends {
-	char friends[50][16];
-	int numfriends;
-};*/
 
 struct Friend {
 	char friends[16]; 	// nombre del amigo
@@ -40,7 +30,7 @@ struct Request {
 };
 
 struct RequestList {
-	struct Request request[50];
+	struct Request request[500];
 	int numrequest;
 	int result;	// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
@@ -48,13 +38,19 @@ struct RequestList {
 struct User {
 	char name[16];
 	struct ListFriends fList;
-	struct RequestList requestlist;
 	int state;
 };
 
 struct UsersList {
 	struct User users[100];
 	int numusers;
+};
+
+struct Message {
+	char emisor[16];
+	char receptor[16];
+	char msg[280];
+	int state;
 };
 
 struct MessageList {
@@ -66,7 +62,7 @@ struct MessageList {
 
 /*########## MENSAJES ##########*/
 int ims__sendMessage (struct Message myMessage, int * result);
-int ims__receiveMessage (char * user, struct MessageList * myListMessage);
+int ims__receiveMessage (char * user, int * state, struct MessageList * myListMessage);
 /*##############################*/
 
 
@@ -76,7 +72,6 @@ int ims__newUser (char * user, int * result);
 int ims__deleteUser (char * user, int * result);
 int ims__login (char * user, int * result);
 int ims__logout (char * user, int * result);
-int ims__listUsers (int * result);
 int ims__reactivate(char * user, int * result);
 /*#############################*/
 
@@ -85,6 +80,8 @@ int ims__reactivate(char * user, int * result);
 /*########## AMIGOS ##########*/
 int ims__listFriends (char * user, struct ListFriends * friends);
 int ims__listFriendRequest (char * user, struct RequestList * lRequest);
+int ims__aceptRequest(char * user, struct Request request, int * result);
+int ims__rejectRequest (char * user, struct Request request, int * result);
 int ims__newFriend (char * user, char * userfriend, int * result);
 int ims__deleteFriend (char * user, char * userfriend, int * result);
 /*############################*/
