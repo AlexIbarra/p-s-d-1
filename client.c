@@ -351,11 +351,19 @@ void newFriend(char *userfriend){
       	soap_print_fault(&soap, stderr); 
 		exit(1);
   	}
+
+
 	if (res == -2){
 		printf("El usuario %s no existe\n", userfriend);
 	}
+	else if(res == -3) {
+  		printf("El usuario %s no puede añadir mas amigos\n", userfriend);
+  	}
+  	else if(res == -4) {
+  		printf("No tienes sitio para añadir mas amigos\n");
+  	}
 	else if(res == 0) {
-  		printf("El usuario %s fue añadido a su lista de amigos\n", userfriend);
+  		printf("Solicitud de amistad a %s realizada correctamemte\n", userfriend);
   	}
   	else {
   		printf("El usuario %s ya estaba en su lista de amigos\n", userfriend);

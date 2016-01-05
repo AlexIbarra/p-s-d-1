@@ -84,7 +84,7 @@ int ims__reactivate(char * user, int * result);
 
 /*########## AMIGOS ##########*/
 int ims__listFriends (char * user, struct ListFriends * friends);
-int ims__listFriendRequest (char * user, struct RequestList * request);
+int ims__listFriendRequest (char * user, struct RequestList * lRequest);
 int ims__newFriend (char * user, char * userfriend, int * result);
 int ims__deleteFriend (char * user, char * userfriend, int * result);
 /*############################*/
