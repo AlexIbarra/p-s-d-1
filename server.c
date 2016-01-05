@@ -28,6 +28,7 @@ struct RequestList requestlist;
 
 // AMIGOS
 #define DELFRIEND -1
+#define REJECTED -2
 #define ACEPTEDFRIEND 1
 #define PENDINGFRIEND 0
 
@@ -388,6 +389,36 @@ int checkFriend(char *user, char *name) {
 	return tmp;
 }
 
+int checkPetition(char *emisor, char *receptor) {
+
+	printf("\t---##### TRACE checkFriend #####---\n");
+
+	printf("\t");
+
+	int i = 0;
+	int tmp = -1;
+	int encontrado=0;
+
+	/* Busco en la lista de amigos del usuario */
+	//while(i< userlist.users[pos].fList.numfriends && !encontrado){
+	while(i< requestlist.numrequest && !encontrado) {
+
+		
+		/* Si la peticion ya esta en la lista (como pendiente) */
+		if(!strcmp(requestlist.request[i].emisor, emisor) && !strcmp(requestlist.request[i].receptor, receptor) && requestlist.request[i].state == PENDINGFRIEND) {
+			printf("Encontrada peticion de %s a %s con estado %d\n", emisor, receptor, requestlist.request[i].state);
+			tmp = i;
+			encontrado = 1;
+		}
+		i++;
+	}
+
+	printf("\t---###############################---\n");
+
+	/* Si no esta en la lista, retorno -1 */
+	return tmp;
+}
+
 
 /*void listarAmigos(int pos, char *friends[]) {
 
@@ -562,47 +593,69 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 
 	int numfriends;
 	int posF;
+	int posP;
 
-	/* Compruebo que el usuario exista */
-	int pos = checkUsers(userfriend);
-	int posuser = checkUsers(user);
-	
-	if (pos != -1) {
+	/* Compruebo que no intente añadirse como amigo a si mismo */
+	if(!strcmp(user, userfriend)) {
 
-		/* Compruebo si ya lo tengo como amigo */
-		posF = checkFriend(user, userfriend);
-		
-
-		/* Si no esta añadido, creo una nueva petición de amistad */
-		if(posF == -1) {
-
-			/* No caben mas amigos al usuario */
-			if(userlist.users[pos].fList.numfriends == 50) {
-				(*result) = -3;
-			}
-			else if(userlist.users[posuser].fList.numfriends == 50) {
-				(*result) = -4;
-			}
-			else {
-
-				strcpy(requestlist.request[requestlist.numrequest].emisor, user);
-				strcpy(requestlist.request[requestlist.numrequest].receptor, userfriend);
-				requestlist.numrequest ++;
-				(*result) = 0;
-
-				printf("Numero de peticiones %d\n", requestlist.numrequest);
-			printf("Añadida peticion de %s a %s\n", requestlist.request[requestlist.numrequest-1].emisor, requestlist.request[requestlist.numrequest-1].receptor);
-			}
-			
-		}	
-		/* Si ya esta añadido, informo al cliente */
-		else {
-			(*result) = -1;
-		}
+		(*result) = -5;
 	}
-	else{
-		//printf("El usuario %s no existe", userfriend);
-		(*result) = -2;
+	/* Si los usuarios son distintos */
+	else {
+
+		/* Compruebo que el usuario exista */
+		int pos = checkUsers(userfriend);
+		int posuser = checkUsers(user);
+		
+		if (pos != -1) {
+
+			/* Compruebo si ya lo tengo como amigo */
+			posF = checkFriend(user, userfriend);
+			
+
+			/* Si no esta añadido, creo una nueva petición de amistad */
+			if(posF == -1) {
+
+				/* Compruebo si la peticion ya esta hecha para ese usuario */
+				posP = checkPetition(user, userfriend);
+
+				/* Todavia no esta hecha la peticion de amistad a ese usuario */
+				if(posP == -1) {
+
+					/* No caben mas amigos al usuario */
+					if(userlist.users[pos].fList.numfriends == 50) {
+						(*result) = -3;
+					}
+					else if(userlist.users[posuser].fList.numfriends == 50) {
+						(*result) = -4;
+					}
+					else {
+
+						strcpy(requestlist.request[requestlist.numrequest].emisor, user);
+						strcpy(requestlist.request[requestlist.numrequest].receptor, userfriend);
+						requestlist.numrequest ++;
+						(*result) = 0;
+
+						printf("Numero de peticiones %d\n", requestlist.numrequest);
+					printf("Añadida peticion de %s a %s\n", requestlist.request[requestlist.numrequest-1].emisor, requestlist.request[requestlist.numrequest-1].receptor);
+					}
+				}
+				/* La peticion de amistad ya estaba hecha */
+				else {
+					(*result) = -6;
+				}
+				
+			}	
+			/* Si ya esta añadido, informo al cliente */
+			else {
+				(*result) = -1;
+			}
+		}
+		else{
+			//printf("El usuario %s no existe", userfriend);
+			(*result) = -2;
+		}
+
 	}
 
 	printf("---###############################---\n");
@@ -665,7 +718,7 @@ int ims__newUser (struct soap *soap, char * user, int * result) {
 	/* Compruebo que el usuario no exista */
 	int pos = checkUsers(user);
 	
-	if(pos != -1) {
+	if(pos == -1) {
 
 		/* Compruebo que se pueden añadir mas usuario */
 		if(userlist.numusers < IMS_MAX_USERS) {

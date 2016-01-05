@@ -362,6 +362,12 @@ void newFriend(char *userfriend){
   	else if(res == -4) {
   		printf("No tienes sitio para añadir mas amigos\n");
   	}
+  	else if(res == -5) {
+  		printf("No te puedes añadir como amigo a ti mismo\n");
+  	}
+  	else if(res == -6) {
+  		printf("Ya tienes una peticion de amistad para el usuario %s\n", userfriend);
+  	}
 	else if(res == 0) {
   		printf("Solicitud de amistad a %s realizada correctamemte\n", userfriend);
   	}
