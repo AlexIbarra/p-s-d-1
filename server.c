@@ -762,9 +762,69 @@ int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList *
 
 int ims__aceptRequest(struct soap *soap, char * user, struct Request request, int * result) {
 
+	//Lo primero es buscar la petición en la lista
+	int i = 0;
+	int pos;
+	int encontrado = -1;
+	while (i < requestlist.numrequest && encontrado == -1){
+		if ((strcmp(requestlist.request[i].emisor, request.emisor) == 0) && (strcmp(requestlist.request[i].receptor, request.receptor) == 0)){
+			encontrado = 0;
+			pos = i;
+		}
+		i++;
+	}
+
+	//Ahora que tenemos encontrada la posicón procedemos a marcarla como aceptada (1) y modificar las estructuras de usuario de ambos
+
+	if (encontrado == -1)
+		(*result) = -1;
+	else{
+		//Marcamos la solicitud como aceptada
+		requestlist.request[pos].state = 1;
+		//Añadimos al usuario emisor como amigo del receptor.
+
+		int pos = checkUsers(requestlist.request[i].emisor);
+		strcpy(userlist.users[pos].fList.listfriends[userlist.users[pos].fList.numfriends].friends, requestlist.request[i].receptor);
+		userlist.users[pos].fList.numfriends ++;
+		
+		//Y ahora viceversa
+		
+		pos = checkUsers(requestlist.request[i].receptor);
+		strcpy(userlist.users[pos].fList.listfriends[userlist.users[pos].fList.numfriends].friends, requestlist.request[i].emisor);
+		userlist.users[pos].fList.numfriends ++;
+		
+		(*result) = 0;
+	}
+
+	return SOAP_OK;	
+
+
+
 }
 
 int ims__rejectRequest(struct soap *soap, char * user, struct Request request, int * result) {
+	
+	//Lo primero es buscar la petición en la lista
+	int i = 0;
+	int pos;
+	int encontrado = -1;
+	while (i < requestlist.numrequest && encontrado == -1){
+		if ((strcmp(requestlist.request[i].emisor, request.emisor) == 0) && (strcmp(requestlist.request[i].receptor, request.receptor) == 0)){
+			encontrado = 0;
+			pos = i;
+		}
+		i++;
+	}
+
+	//Ahora que tenemos encontrada la posicón procedemos a marcarla como rechazada (-1)
+	if (encontrado == -1)
+		(*result)= -1;
+	else{
+		requestlist.request[pos].state = -1;
+		(*result) = 0;
+	}
+
+	return SOAP_OK;
 
 }
 /*#################################################*/
