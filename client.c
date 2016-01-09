@@ -14,6 +14,12 @@
 #define RECEIVE 1
 #define READ 2
 
+// AMIGOS
+#define DELFRIEND -1
+#define REJECTED -2
+#define ACEPTEDFRIEND 1
+#define PENDINGFRIEND 0
+
 
 // Variables globales
 char *serverURL;
@@ -35,8 +41,6 @@ void listRequest(char *user);
 void newMessage();
 void listMessages(char *user, int option);
 void reactivateUser(char *user);
-
-void loqsea(struct ListFriends * f);
 
 
 
@@ -69,16 +73,13 @@ int main(int argc, char **argv){
 	strcpy(conectedUser, argv[2]);
 	
 	/* Añadimos el usuario con el que se ha concetado el cliente */
-	//newUser(user);
 	login(conectedUser);
 
 	while(status) {
 
 		// Mostramos el menu y recogemos la opcion
 		opcion = menu();
-		//if(opcion != 10) {
 		status = gestorMenu(opcion);
-		//}
 	}
   	
 	// Clean the environment
@@ -93,35 +94,26 @@ int menu(){
 	char opcion[10];
 	int value;
 	
-	printf("1) Dar de alta usuario\n");
-	printf("2) Darte de baja\n");
-	printf("3) Listado de amigos\n");
-	printf("4) Enviar solicitud de amistad\n");
-	printf("5) Borrar a un amigo\n");
-	printf("6) Ver mensajes enviados\n");
-	printf("7) Ver mensajes recibidos\n");
-	printf("8) Enviar un mensaje\n");
-	printf("9) Cerrar sesion\n");
-	printf("0) Ver/aceptar solicitudes de amistad\n");
-	printf("Opcion: ");
-	
+	printf("\n#############################################\n");
+	printf("#######  %s, selecciona una opción    #####\n" , conectedUser);
+	printf("#############################################\n");
+	printf("|| 1) Ver mensajes recibidos               ||\n");
+	printf("|| 2) Ver mensajes enviados                ||\n");
+	printf("|| 3) Enviar un mensaje                    ||\n");	
+	printf("|| 4) Enviar solicitud de amistad          ||\n");
+	printf("|| 5) Ver/aceptar solicitudes de amistad   ||\n");
+	printf("|| 6) Listado de amigos                    ||\n");
+	printf("|| 7) Borrar a un amigo                    ||\n");	
+	printf("|| 8) Darte de baja                        ||\n");
+	printf("|| 9) Cerrar sesion                        ||\n");
+	printf("#############################################\n");
+	printf("\nOpcion: ");
 	scanf("%s", opcion);
-	//fflush(stdin);
 
 	value = atoi(opcion);
-
-	//opcion = getchar();
-
-	// if(opcion == '\n')
-	// 	value = 10;
-	// else
-	// 	value = opcion - 48;
-
-
 	printf("\n");
 	
-	return value;
-		
+	return value;		
 }
 
 int gestorMenu(int op) {
@@ -131,19 +123,20 @@ int gestorMenu(int op) {
 	int *res;
 	
 	switch(op) {
-		case 1: // Dar de alta usuario
+		/*case 1: // Dar de alta usuario
 			printf("Introduzca nombre de usuario: ");
 			scanf("%s", user);		
 			newUser(user);
 			printf("\n");
+			break; */	
+		case 1: //Ver mensajes enviados
+			listMessages(conectedUser, RECEIVE);
 			break;
-		case 2: // Dar de baja usuario
-			printf("Procediendo a dar de baja al usuario... \n");			
-			deleteUser(conectedUser);
-			status = 0;
-			break;	
-		case 3: //Listar amigos
-			listFriends(conectedUser);
+		case 2: //Ver mensajes recibidos
+			listMessages(conectedUser, SEND);
+			break;
+		case 3: //Enviar un mensaje
+			newMessage(conectedUser);
 			break;
 		case 4: //Añadir un amigo
 			printf("Introduzca nombre del usuario que quiere añadir como amigo: ");
@@ -151,26 +144,25 @@ int gestorMenu(int op) {
 			newFriend(addFriend);
 			printf("\n");
 			break;
-		case 5: //Borrar un amigo
+		case 5: //Ver solicitudes de amistad
+			listRequest(conectedUser);
+			break;
+		case 6: //Listar amigos
+			listFriends(conectedUser);
+			break;		
+		case 7: //Borrar un amigo
 			printf("Introduzca nombre del amigo que quieres eliminar: ");
 			scanf("%s", user);
 			deleteFriend(user);
 			break;
-		case 6: //Ver mensajes enviados
-			listMessages(conectedUser, SEND);
-			break;
-		case 7: //Ver mensajes recibidos
-			listMessages(conectedUser, RECEIVE);
-			break;
-		case 8: //Enviar un mensaje
-			newMessage(conectedUser);
+		case 8: // Dar de baja usuario
+			printf("Procediendo a dar de baja al usuario... \n");			
+			deleteUser(conectedUser);
+			status = 0;
 			break;
 		case 9: //Cerrar sesion
 			logout(conectedUser);
 			status = 0;
-			break;
-		case 0: //Ver solicitudes de amistad
-			listRequest(conectedUser);
 			break;
 		default:
 			printf("Opcion incorrecta!!!\n");
@@ -201,16 +193,17 @@ void newUser(char *user) {
   	/* Tratamiento de la respuesta del servidor */
 
   	if(res == 0) { // Añadido correctamente
-  		printf("Añadido usuario %s\n\n", user);
+  		printf("\n====>    Añadido usuario %s    <====\n", user);
   	}
 	else if(res == 1) { // Usuario ya existe
-		printf("El usuario %s ya existe\n\n", user);
+		printf("\n====>    El usuario %s ya existe    <====\n", user);
 	}
 	else if(res == 2) {
-		printf("Bienvenido %s\n\n", user);
+
+		printf("\n====>    Bienvenido %s    <====\n", user);
 	}
 	else if(res == -1) { // Usuario eliminado
-		printf("El usuario %s ha sido dado de baja\n", user);
+		printf("\n====>    El usuario %s ha sido dado de baja    <====\n", user);
 		printf("¿Quiere volver a dar de alta a este usuario? (s/n): ");
 		scanf("%c", option);
 		printf("\n");
@@ -220,7 +213,7 @@ void newUser(char *user) {
 		}
 	}
 	else if(res == -2) { // Lista llena
-		printf("Lista de usuarios llena\n\n");
+		printf("\n====>    Lista de usuarios llena    <====\n\n");
 	}
 }
 
@@ -253,7 +246,7 @@ void login(char *user) {
 
 	if(res == -2) {
 
-		printf("El usuario %s no esta dado de alta\n", user);
+		printf("\n====>    El usuario %s no esta dado de alta    <====\n", user);
 		printf("¿Quiere darlo de alta? (s/n): ");
 		scanf("%s", opcion);
 
@@ -264,7 +257,7 @@ void login(char *user) {
 
 	}
 	else if(res == -1) {
-		printf("El usuario %s ha sido dado de baja\n", user);
+		printf("\n====>    El usuario %s ha sido dado de baja    <====\n", user);
 		printf("¿Quiere volver a dar de alta a este usuario? (s/n): ");
 		scanf("%s", opcion);
 		printf("\n");
@@ -273,7 +266,11 @@ void login(char *user) {
 			reactivateUser(user);
 	}
 	else if(res == 0)
-		printf("Bienvenido %s\n", user);
+		printf("\n====>    Bienvenido %s    <====\n", user);
+	else if(res == 1) {
+		printf("\n====>    Este usuario ya se encuentra conectado    <====\n");
+		exit(0);
+	}
 }
 
 void reactivateUser(char *user) {
@@ -339,7 +336,7 @@ void listFriends(char *user){
 
   		for(i=0; i<friends.numfriends; i++) {
   			//if(friends.listfriends[i].state != -1)
-				printf(">%s : %d\n", friends.listfriends[i].friends, friends.listfriends[i].state);
+				printf("- %s \n", friends.listfriends[i].friends);
 		}
   	}
 }
@@ -357,25 +354,25 @@ void newFriend(char *userfriend){
 
 
 	if (res == -2){
-		printf("El usuario %s no existe\n", userfriend);
+		printf("\n====>    El usuario %s no existe    <====\n", userfriend);
 	}
 	else if(res == -3) {
-  		printf("El usuario %s no puede añadir mas amigos\n", userfriend);
+  		printf("\n====>    El usuario %s no puede añadir mas amigos    <====\n", userfriend);
   	}
   	else if(res == -4) {
-  		printf("No tienes sitio para añadir mas amigos\n");
+  		printf("\n====>    No tienes sitio para añadir mas amigos    <====\n");
   	}
   	else if(res == -5) {
-  		printf("No te puedes añadir como amigo a ti mismo\n");
+  		printf("\n====>    No te puedes añadir como amigo a ti mismo    <====\n");
   	}
   	else if(res == -6) {
-  		printf("Ya tienes una peticion de amistad para el usuario %s\n", userfriend);
+  		printf("\n====>    Ya tienes una peticion de amistad para el usuario %s    <====\n", userfriend);
   	}
 	else if(res == 0) {
-  		printf("Solicitud de amistad a %s realizada correctamemte\n", userfriend);
+  		printf("\n====>    Solicitud de amistad a %s realizada correctamemte    <====\n", userfriend);
   	}
   	else {
-  		printf("El usuario %s ya estaba en su lista de amigos\n", userfriend);
+  		printf("\n====>    El usuario %s ya estaba en su lista de amigos    <====\n", userfriend);
   	}
 }
 
@@ -391,20 +388,20 @@ void deleteFriend(char * name) {
   	}
 
 	if (res == 0){
-		printf("El usuario %s ha sido eliminado de tu lista de amigos\n", name);
+		printf("\n====>    El usuario %s ha sido eliminado de tu lista de amigos    <====\n", name);
 	}
 	else if(res == -1) {
-		printf("El usuario %s no existe\n", name);
+		printf("\n====>    El usuario %s no existe    <====\n", name);
 	}
 	else if(res == -2) {
-		printf("El usuario %s no esta en tu lista de amigos\n", name);
+		printf("\n====>    El usuario %s no esta en tu lista de amigos    <====\n", name);
 	}
 }
 
 void listRequest(char *user){
 
 	int res, i, value,salir=0;
-	char op;
+	char op[1];
 	char opcion[1];
 	struct RequestList requestlist;
 
@@ -418,18 +415,25 @@ void listRequest(char *user){
 
   	if(requestlist.result == 0) {
 
-  		printf("Numero de peticiones %d:\n", requestlist.numrequest);
+  		printf("\nNumero de peticiones %d:\n", requestlist.numrequest);
 
   		for(i=0; i<requestlist.numrequest; i++) {
-  			//if(friends.listfriends[i].state != -1)
-			printf("%d) > %s : %d\n", i ,requestlist.request[i].emisor, requestlist.request[i].state);
+
+  			if(requestlist.request[i].state == DELFRIEND)
+				printf(" (%d)- %s : ELIMINADO\n", i ,requestlist.request[i].emisor);
+			else if(requestlist.request[i].state == ACEPTEDFRIEND)
+				printf(" (%d)- %s : ACEPTADO\n", i ,requestlist.request[i].emisor);
+			else if(requestlist.request[i].state == REJECTED)
+				printf(" (%d)- %s : RECHAZADO\n", i ,requestlist.request[i].emisor);
+			else if(requestlist.request[i].state == PENDINGFRIEND)
+				printf(" (%d)- %s : PENDIENTE\n", i ,requestlist.request[i].emisor);
 		}
 
 		if(requestlist.numrequest > 0) {
 			//Ahora gestionamos el tema de aceptarlas
-		  	printf("Introduce el número de la petición que quieres tratar o pusla (s) para salir: ");
+		  	printf("\nIntroduce el número de la petición que quieres tratar o pusla (s) para salir: ");
 		  	scanf("%s", opcion);
-		  	
+
 		  	/* Si no quiere salir */
 		  	if(strcmp(opcion, "s") != 0) {
 
@@ -437,16 +441,13 @@ void listRequest(char *user){
 
 				
 				printf("\n¿Aceptar (a) o rechazar (r)? ");
-				//scanf("%c", op);
-				fflush(stdin);
-				op = getchar();
-				fflush(stdin);
+				scanf("%s", op);
 
 				printf("\n");
 
 				do {
 				
-					if(op == 'a' || op == 'A'){
+					if(strcmp(op, "a") || strcmp(op, "A")){
 						//Enviamos la petición al servidor para que lo acepte:
 						soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
 
@@ -457,7 +458,7 @@ void listRequest(char *user){
 
 						salir = 1;
 					}
-					else if (op == 'r' || op == 'R'){
+					else if (strcmp(op, "r") || strcmp(op, "R")){
 
 						soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
 
@@ -471,21 +472,16 @@ void listRequest(char *user){
 					else {
 						printf("Opción incorrecta \n");
 						printf("¿Aceptar (a) o rechazar (r)? a/r: ");
-						//scanf("%c", op);
-						fflush(stdin);
-						op = getchar();
-						fflush(stdin);
+						scanf("%s", op);
+						/*fflush(stdin);
+						op = getchar();*/
 						printf("\n");
 					}
 
 				} while(!salir);
 			}
 		}
-  	}
-  	
-  	
-  	
-  	
+  	} 	
 }
 /*############################################*/
 
@@ -552,23 +548,28 @@ void listMessages(char *user, int option) {
   	if(mList.result == 0) {
 
  		if(option == RECEIVE) {
-	  		printf("Tienes %d mensajes recibidos\n", mList.nummessages);
+	  		printf("Tienes %d mensajes recibidos:\n\n", mList.nummessages);
 			for(i = 0; i < mList.nummessages; i++) {
-
-				printf("Emisor: %s \n", mList.messages[i].emisor);
-				printf("Mensaje: \n\t %s \n", mList.messages[i].msg);
+				printf("-------------------------------\n");
+				printf("De: %s \n", mList.messages[i].emisor);
+				printf("Mensaje: %s \n", mList.messages[i].msg);
+				printf("-------------------------------\n");
 			}
 		}
 		if(option == SEND) {
-	  		printf("Tienes %d mensajes enviados\n", mList.nummessages);
+	  		printf("Tienes %d mensajes enviados:\n\n", mList.nummessages);
 			for(i = 0; i < mList.nummessages; i++) {
 
-				printf("Receptor: %s \n", mList.messages[i].emisor);
-				printf("Mensaje: \n\t %s \n", mList.messages[i].msg);
+				printf("-------------------------------\n");
+				printf("Para: %s \n", mList.messages[i].emisor);
+				printf("Mensaje: %s \n", mList.messages[i].msg);
 				if(mList.messages[i].state == RECEIVE)
 					printf("Estado: %s \n", "Recibido");
 				else if(mList.messages[i].state == READ)
 					printf("Estado: %s \n", "Leido");
+
+				printf("(%d)\n", mList.messages[i].state);
+				printf("-------------------------------\n");
 			}
 		}	
 
