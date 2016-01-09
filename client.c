@@ -9,6 +9,11 @@
 
 #define DEBUG_MODE 1
 
+// MENSAJES
+#define SEND 0
+#define RECEIVE 1
+#define READ 2
+
 
 // Variables globales
 char *serverURL;
@@ -28,7 +33,7 @@ void deleteFriend(char * name);
 void listFriends(char *user);
 void listRequest(char *user);
 void newMessage();
-void listPendingMessages();
+void listMessages(char *user, int option);
 void reactivateUser(char *user);
 
 void loqsea(struct ListFriends * f);
@@ -152,17 +157,15 @@ int gestorMenu(int op) {
 			deleteFriend(user);
 			break;
 		case 6: //Ver mensajes enviados
-			//newUser(&user);
+			listMessages(conectedUser, SEND);
 			break;
 		case 7: //Ver mensajes recibidos
-			//newUser(&user);
+			listMessages(conectedUser, RECEIVE);
 			break;
 		case 8: //Enviar un mensaje
 			newMessage(conectedUser);
 			break;
 		case 9: //Cerrar sesion
-			//newUser(&user);
-			// hay que avisar al servidor de que vamos a salir de la sesion
 			logout(conectedUser);
 			status = 0;
 			break;
@@ -400,9 +403,9 @@ void deleteFriend(char * name) {
 
 void listRequest(char *user){
 
-	int res, i, value;
+	int res, i, value,salir=0;
 	char op;
-	char * opcion;
+	char opcion[1];
 	struct RequestList requestlist;
 
 	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &requestlist);
@@ -421,50 +424,67 @@ void listRequest(char *user){
   			//if(friends.listfriends[i].state != -1)
 			printf("%d) > %s : %d\n", i ,requestlist.request[i].emisor, requestlist.request[i].state);
 		}
+
+		if(requestlist.numrequest > 0) {
+			//Ahora gestionamos el tema de aceptarlas
+		  	printf("Introduce el número de la petición que quieres tratar o pusla (s) para salir: ");
+		  	scanf("%s", opcion);
+		  	
+		  	/* Si no quiere salir */
+		  	if(strcmp(opcion, "s") != 0) {
+
+				value = atoi(opcion);
+
+				
+				printf("\n¿Aceptar (a) o rechazar (r)? ");
+				//scanf("%c", op);
+				fflush(stdin);
+				op = getchar();
+				fflush(stdin);
+
+				printf("\n");
+
+				do {
+				
+					if(op == 'a' || op == 'A'){
+						//Enviamos la petición al servidor para que lo acepte:
+						soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+
+						if (soap.error) {
+						  soap_print_fault(&soap, stderr); 
+						  exit(1);
+						}
+
+						salir = 1;
+					}
+					else if (op == 'r' || op == 'R'){
+
+						soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+
+						if (soap.error) {
+						  soap_print_fault(&soap, stderr); 
+						  exit(1);
+						}
+
+						salir = 1;
+					}
+					else {
+						printf("Opción incorrecta \n");
+						printf("¿Aceptar (a) o rechazar (r)? a/r: ");
+						//scanf("%c", op);
+						fflush(stdin);
+						op = getchar();
+						fflush(stdin);
+						printf("\n");
+					}
+
+				} while(!salir);
+			}
+		}
   	}
   	
   	
-  	//Ahora gestionamos el tema de aceptarlas
-  	printf("Introduce el número de la petición que quieres tratar o pusla (s) para salir: ");
-  	scanf("%s", opcion);
-
-  	if(strcmp(opcion, "s")) {
-
-		value = atoi(opcion);
-
-		printf("\n");
-		
-		printf("¿Aceptar (a) o rechazar (r)?");
-		scanf("%c", op);
-
-		do {
-		
-			if(op == 'a' || op == 'A'){
-				//Enviamos la petición al servidor para que lo acepte:
-				soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
-
-				if (soap.error) {
-				  soap_print_fault(&soap, stderr); 
-				  exit(1);
-				}
-			}
-			else if (op == 'r' || op == 'R'){
-
-					soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
-
-					if (soap.error) {
-					  soap_print_fault(&soap, stderr); 
-					  exit(1);
-					}
-			}
-			else {
-				printf("Opción incorrecta \n");
-				printf("¿Aceptar (a) o rechazar (r)? a/r: ");
-				scanf("%c", op);
-			}
-
-		} while(op != 'a' && op != 'A' && op != 'r' && op != 'R');
-	}
+  	
   	
 }
 /*############################################*/
@@ -513,12 +533,14 @@ void newMessage(char *user){
   	}
 }
 
-void listPendingMessages(char *user) {
+void listMessages(char *user, int option) {
 
 	struct MessageList mList;
-	int state = 0;
+	int i;
+	char * estado;
 
-	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &state, &mList);
+
+	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &option, &mList);
 
 	// Check for errors...
   	if (soap.error) {
@@ -528,6 +550,27 @@ void listPendingMessages(char *user) {
 
   	/* Muestro los mensajes del usuario */
   	if(mList.result == 0) {
+
+ 		if(option == RECEIVE) {
+	  		printf("Tienes %d mensajes recibidos\n", mList.nummessages);
+			for(i = 0; i < mList.nummessages; i++) {
+
+				printf("Emisor: %s \n", mList.messages[i].emisor);
+				printf("Mensaje: \n\t %s \n", mList.messages[i].msg);
+			}
+		}
+		if(option == SEND) {
+	  		printf("Tienes %d mensajes enviados\n", mList.nummessages);
+			for(i = 0; i < mList.nummessages; i++) {
+
+				printf("Receptor: %s \n", mList.messages[i].emisor);
+				printf("Mensaje: \n\t %s \n", mList.messages[i].msg);
+				if(mList.messages[i].state == RECEIVE)
+					printf("Estado: %s \n", "Recibido");
+				else if(mList.messages[i].state == READ)
+					printf("Estado: %s \n", "Leido");
+			}
+		}	
 
   	}
 

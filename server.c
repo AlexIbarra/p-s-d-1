@@ -24,7 +24,8 @@ struct RequestList requestlist;
 
 // MENSAJES
 #define SEND 0
-#define READ 1
+#define RECEIVE 1
+#define READ 2
 
 // AMIGOS
 #define DELFRIEND -1
@@ -140,17 +141,24 @@ int loadUserList() {
 
 	FILE *fd = fopen("bbdd/users.txt","r+");
 
-	while((nread = fread(&usertmp, sizeof(struct User), 1, fd)) > 0) {
-		//if(usertmp.state != DELETED) {
-		userlist.users[numusers] = usertmp;
-		printf("Leido usuario %s con estado %d\n",userlist.users[numusers].name, userlist.users[numusers].state);
-		numusers++;
-		//}
+	if(fd == NULL){
+		fd = fopen("bbdd/users.txt","w");
+		fclose(fd);
 	}
+	else {
 
-	userlist.numusers = numusers;
+		while((nread = fread(&usertmp, sizeof(struct User), 1, fd)) > 0) {
+			//if(usertmp.state != DELETED) {
+			userlist.users[numusers] = usertmp;
+			printf("Leido usuario %s con estado %d\n",userlist.users[numusers].name, userlist.users[numusers].state);
+			numusers++;
+			//}
+		}
 
-	fclose(fd);
+		userlist.numusers = numusers;
+
+		fclose(fd);
+	}
 
 	printf("---###############################---\n");
 
@@ -195,15 +203,22 @@ int loadMessageList() {
 
 	FILE *fd = fopen("bbdd/messages.txt","r+");
 
-	while((nread = fread(&msgtmp, sizeof(struct Message), 1, fd)) > 0) {
-		messagelist.messages[nummessages] = msgtmp;
-		printf("\t Leyendo emisor %s, receptor %s, mensaje %s, estado %d\n",msgtmp.emisor, msgtmp.receptor, msgtmp.msg, msgtmp.state);
-		nummessages++;
+	if(fd == NULL){
+		fd = fopen("bbdd/messages.txt","w");
+		fclose(fd);
 	}
+	else {
 
-	messagelist.nummessages = nummessages;
+		while((nread = fread(&msgtmp, sizeof(struct Message), 1, fd)) > 0) {
+			messagelist.messages[nummessages] = msgtmp;
+			printf("\t Leyendo emisor %s, receptor %s, mensaje %s, estado %d\n",msgtmp.emisor, msgtmp.receptor, msgtmp.msg, msgtmp.state);
+			nummessages++;
+		}
 
-	fclose(fd);
+		messagelist.nummessages = nummessages;
+
+		fclose(fd);
+	}
 
 	printf("---###############################---\n");
 
@@ -246,15 +261,22 @@ int loadRequestList(){
 
 	FILE *fd = fopen("bbdd/request.txt","r+");
 
-	while((nread = fread(&rqstmp, sizeof(struct Request), 1, fd)) > 0) {
-		requestlist.request[numrequest] = rqstmp;
-		printf("\t Leyendo emisor %s, receptor %s,estado %d\n",rqstmp.emisor, rqstmp.receptor, rqstmp.state);
-		numrequest++;
+	if(fd == NULL){
+		fd = fopen("bbdd/request.txt","w");
+		fclose(fd);
 	}
+	else {
 
-	requestlist.numrequest = numrequest;
+		while((nread = fread(&rqstmp, sizeof(struct Request), 1, fd)) > 0) {
+			requestlist.request[numrequest] = rqstmp;
+			printf("\t Leyendo emisor %s, receptor %s,estado %d\n",rqstmp.emisor, rqstmp.receptor, rqstmp.state);
+			numrequest++;
+		}
 
-	fclose(fd);
+		requestlist.numrequest = numrequest;
+
+		fclose(fd);
+	}
 
 	printf("---###############################---\n");
 
@@ -508,7 +530,7 @@ int ims__sendMessage (struct soap *soap, struct Message myMessage, int *result){
 			strcpy(messagelist.messages[messagelist.nummessages].emisor, myMessage.emisor);
 			strcpy(messagelist.messages[messagelist.nummessages].receptor, myMessage.receptor);
 			strcpy(messagelist.messages[messagelist.nummessages].msg, myMessage.msg);
-			messagelist.messages[messagelist.nummessages].state = SEND;
+			messagelist.messages[messagelist.nummessages].state = RECEIVE;
 			messagelist.nummessages++;
 			(*result) = 0;
 		}
@@ -530,24 +552,44 @@ int ims__receiveMessage (struct soap *soap, char * user, int * state, struct Mes
 
 	int i;
 	
-	for(i = 0; i < messagelist.nummessages; i++) {
-		
-		/* Si se tratan de mensajes sin leer del usuario */
-		if(messagelist.messages[i].state == SEND && !strcmp(messagelist.messages[i].receptor, user)) {
 
-			/* Copio los datos del mensaje */
-			strcpy((*myListMessage).messages[i].receptor, messagelist.messages[i].receptor);
-			strcpy((*myListMessage).messages[i].emisor, messagelist.messages[i].emisor);
-			strcpy((*myListMessage).messages[i].msg, messagelist.messages[i].msg);
-			(*myListMessage).messages[i].state = SEND;
-			(*myListMessage).nummessages++;
+	/* Busco los mensajes en los que el usuario es el receptor */
+	if((*state) == RECEIVE) {
+		for(i = 0; i < messagelist.nummessages; i++) {
 
-			(*myListMessage).result = 0;
+			if(!strcmp(messagelist.messages[i].receptor, user)) {
+
+				/* Copio los datos del mensaje */
+				strcpy((*myListMessage).messages[i].receptor, messagelist.messages[i].receptor);
+				strcpy((*myListMessage).messages[i].emisor, messagelist.messages[i].emisor);
+				strcpy((*myListMessage).messages[i].msg, messagelist.messages[i].msg);
+				/* Le indico al cliente que los mensajes seran aquellos recibidos */
+				(*myListMessage).messages[i].state = RECEIVE;
+				/* Modifico el estado del mensaje para marcarlos como leidos */
+				messagelist.messages[i].state = READ;
+				(*myListMessage).nummessages++;
+				(*myListMessage).result = 0;
+			}
 		}
-
-		
 	}
+	/* Busco los mensajes en los que el usuario es el emisor */
+	else if((*state) == SEND) {
+		for(i = 0; i < messagelist.nummessages; i++) {
 
+			if(!strcmp(messagelist.messages[i].emisor, user)) {
+
+				/* Copio los datos del mensaje */
+				strcpy((*myListMessage).messages[i].receptor, messagelist.messages[i].receptor);
+				strcpy((*myListMessage).messages[i].emisor, messagelist.messages[i].emisor);
+				strcpy((*myListMessage).messages[i].msg, messagelist.messages[i].msg);
+				/* Le indico al cliente el estado en el que se encuentra el mensaje */
+				(*myListMessage).messages[i].state = messagelist.messages[i].state;
+				(*myListMessage).nummessages++;
+				(*myListMessage).result = 0;
+			}
+		}
+	}
+		
 
 	printf("---###############################---\n");
 
@@ -762,12 +804,17 @@ int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList *
 
 int ims__aceptRequest(struct soap *soap, char * user, struct Request request, int * result) {
 
+	printf("---##### TRACE ims__aceptRequest #####---\n");
+
 	//Lo primero es buscar la petición en la lista
 	int i = 0;
 	int pos;
+	int posAux;
 	int encontrado = -1;
+
 	while (i < requestlist.numrequest && encontrado == -1){
 		if ((strcmp(requestlist.request[i].emisor, request.emisor) == 0) && (strcmp(requestlist.request[i].receptor, request.receptor) == 0)){
+			printf("Peticion encontrada de %s a %s \n", requestlist.request[i].emisor, requestlist.request[i].receptor);
 			encontrado = 0;
 			pos = i;
 		}
@@ -783,26 +830,29 @@ int ims__aceptRequest(struct soap *soap, char * user, struct Request request, in
 		requestlist.request[pos].state = 1;
 		//Añadimos al usuario emisor como amigo del receptor.
 
-		int pos = checkUsers(requestlist.request[i].emisor);
-		strcpy(userlist.users[pos].fList.listfriends[userlist.users[pos].fList.numfriends].friends, requestlist.request[i].receptor);
-		userlist.users[pos].fList.numfriends ++;
+		posAux = checkUsers(requestlist.request[pos].emisor);
+		strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].receptor);
+		userlist.users[posAux].fList.numfriends ++;
+		printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].receptor);		
 		
 		//Y ahora viceversa
 		
-		pos = checkUsers(requestlist.request[i].receptor);
-		strcpy(userlist.users[pos].fList.listfriends[userlist.users[pos].fList.numfriends].friends, requestlist.request[i].emisor);
-		userlist.users[pos].fList.numfriends ++;
+		posAux = checkUsers(requestlist.request[pos].receptor);
+		strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].emisor);
+		userlist.users[posAux].fList.numfriends ++;
+		printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].emisor);
 		
 		(*result) = 0;
 	}
 
+	printf("---###############################---\n");
+
 	return SOAP_OK;	
-
-
-
 }
 
 int ims__rejectRequest(struct soap *soap, char * user, struct Request request, int * result) {
+
+	printf("---##### TRACE ims__rejectRequest #####---\n");
 	
 	//Lo primero es buscar la petición en la lista
 	int i = 0;
@@ -824,8 +874,9 @@ int ims__rejectRequest(struct soap *soap, char * user, struct Request request, i
 		(*result) = 0;
 	}
 
-	return SOAP_OK;
+	printf("---###############################---\n");
 
+	return SOAP_OK;
 }
 /*#################################################*/
 
