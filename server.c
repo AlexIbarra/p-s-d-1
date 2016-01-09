@@ -459,7 +459,6 @@ int checkFreeFriendPosition(char *name) {
 	return tmp;
 }
 
-
 void *process_request(void *soap) { 
 
    pthread_detach(pthread_self()); 
