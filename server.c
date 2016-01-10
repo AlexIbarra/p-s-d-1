@@ -104,7 +104,11 @@ int main(int argc, char **argv) {
 			}
 
 			// gestiono la funcion que me pide el Cliente
-			soap_serve(&soap);
+			if (soap_serve(&soap) != SOAP_OK){
+				soap_print_fault(&soap, stderr);
+				exit(-1);
+			}
+
 			soap_end(&soap);
 
 
@@ -583,6 +587,8 @@ int ims__datos (struct soap *soap, int * result) {
 	(*result) = 0;
 
 	printf("\n----------------------------------------------------\n\n");
+
+	return SOAP_OK;
 }
 
 
@@ -632,28 +638,32 @@ int ims__receiveMessage (struct soap *soap, char * user, int * state, struct Mes
 	//printf("---##### TRACE ims__receiveMessage #####---\n");
 	
 	int i=0;
-	int encontrado = 0;
+	(*myListMessage).nummessages = 0;
 	
 
 	/* Busco los mensajes en los que el usuario es el receptor */
 	if((*state) == RECEIVE) {
 
-		while(i < messagelist.nummessages && !encontrado) {
+		while(i < messagelist.nummessages) {
 
 			if(!strcmp(messagelist.messages[i].receptor, user)) {
 
 				/* Copio los datos del mensaje */
-				strcpy((*myListMessage).messages[i].receptor, messagelist.messages[i].receptor);
-				strcpy((*myListMessage).messages[i].emisor, messagelist.messages[i].emisor);
-				strcpy((*myListMessage).messages[i].msg, messagelist.messages[i].msg);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].receptor, messagelist.messages[i].receptor);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].emisor, messagelist.messages[i].emisor);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].msg, messagelist.messages[i].msg);
 				/* Le indico al cliente que los mensajes seran aquellos recibidos */
-				(*myListMessage).messages[i].state = RECEIVE;
+				(*myListMessage).messages[(*myListMessage).nummessages].state = RECEIVE;
 				/* Modifico el estado del mensaje para marcarlos como leidos */
 				messagelist.messages[i].state = READ;
 				(*myListMessage).nummessages++;
 				(*myListMessage).result = 0;
-				encontrado = 1;
-				printf("%s ha leido '%s' de %s para %s con estado %d\n", user, (*myListMessage).messages[i].msg, (*myListMessage).messages[i].emisor, (*myListMessage).messages[i].receptor, messagelist.messages[i].state);
+
+				printf("%s ha leido '%s' de %s para %s con estado %d\n", user, 
+				(*myListMessage).messages[(*myListMessage).nummessages-1].msg, 
+				(*myListMessage).messages[(*myListMessage).nummessages-1].emisor, 
+				(*myListMessage).messages[(*myListMessage).nummessages-1].receptor, 
+				messagelist.messages[(*myListMessage).nummessages-1].state);
 				//printf("%s ha leido '%s' de %s para %s con estado %d \n", user, messagelist.messages[i].msg, messagelist.messages[i].emisor, messagelist.messages[i].receptor, messagelist.messages[i].state);
 			}
 			i++;
@@ -661,20 +671,23 @@ int ims__receiveMessage (struct soap *soap, char * user, int * state, struct Mes
 	}
 	/* Busco los mensajes en los que el usuario es el emisor */
 	else if((*state) == SEND) {
-		while(i < messagelist.nummessages && !encontrado) {
+		while(i < messagelist.nummessages) {
 
 			if(!strcmp(messagelist.messages[i].emisor, user)) {
 
 				/* Copio los datos del mensaje */
-				strcpy((*myListMessage).messages[i].receptor, messagelist.messages[i].receptor);
-				strcpy((*myListMessage).messages[i].emisor, messagelist.messages[i].emisor);
-				strcpy((*myListMessage).messages[i].msg, messagelist.messages[i].msg);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].receptor, messagelist.messages[i].receptor);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].emisor, messagelist.messages[i].emisor);
+				strcpy((*myListMessage).messages[(*myListMessage).nummessages].msg, messagelist.messages[i].msg);
 				/* Le indico al cliente el estado en el que se encuentra el mensaje */
-				(*myListMessage).messages[i].state = messagelist.messages[i].state;
+				(*myListMessage).messages[(*myListMessage).nummessages].state = messagelist.messages[i].state;
 				(*myListMessage).nummessages++;
 				(*myListMessage).result = 0;
-				encontrado = 1;
-				printf("Leido '%s' de %s para %s con estado %d\n", (*myListMessage).messages[i].msg, (*myListMessage).messages[i].emisor, (*myListMessage).messages[i].receptor, messagelist.messages[i].state);
+
+				printf("Leido '%s' de %s para %s con estado %d\n", (*myListMessage).messages[(*myListMessage).nummessages-1].msg, 
+				(*myListMessage).messages[(*myListMessage).nummessages-1].emisor, 
+				(*myListMessage).messages[(*myListMessage).nummessages-1].receptor, 
+				messagelist.messages[(*myListMessage).nummessages-1].state);
 				//printf("Leido '%s' de %s para %s con estado %d \n", messagelist.messages[i].msg, messagelist.messages[i].emisor, messagelist.messages[i].receptor, messagelist.messages[i].state);
 			}
 			i++;
@@ -775,7 +788,7 @@ int ims__deleteFriend (struct soap *soap, char * user, char * userfriend, int * 
 
 
 	//printf("---##### TRACE ims__deleteFriend #####---\n");
-	printf("Los usuarios %s y %s ya no son amigos", user, userfriend);
+	printf("Los usuarios %s y %s ya no son amigos\n", user, userfriend);
 	int posF, pos, posFf;
 	/* Compruebo que el usuario exista */
 	int posAmigo = checkUsers(userfriend);
@@ -856,6 +869,7 @@ int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList *
 	//	printf("---##### TRACE ims__listFriendRequest #####---\n");
 
 	int pos, i;
+	(*lRequest).numrequest = 0;
 
 	/* Comprobamos que el usuario existe */
 	pos = checkUsers(user);
@@ -867,11 +881,11 @@ int ims__listFriendRequest (struct soap *soap, char * user, struct RequestList *
 			/* Busco en la lista las peticions al usuario con peticiones pendientes */
 			if(!strcmp(requestlist.request[i].receptor, user) && requestlist.request[i].state == PENDINGFRIEND) {
 				/* Copio el emisor de la peticion */
-				strcpy((*lRequest).request[i].emisor, requestlist.request[i].emisor);
+				strcpy((*lRequest).request[(*lRequest).numrequest].emisor, requestlist.request[i].emisor);
 				/* Copio el receptor de la peticion */
-				strcpy((*lRequest).request[i].receptor, user);
+				strcpy((*lRequest).request[(*lRequest).numrequest].receptor, user);
 				/* Copio el estado de la peticion */
-				(*lRequest).request[i].state = PENDINGFRIEND;
+				(*lRequest).request[(*lRequest).numrequest].state = PENDINGFRIEND;
 				/* Incremento el numero de peticiones */
 				(*lRequest).numrequest++;
 			}
@@ -908,7 +922,7 @@ int ims__aceptRequest(struct soap *soap, char * user, struct Request request, in
 
 	while (pos < requestlist.numrequest && !encontrado) {
 
-		if ((strcmp(requestlist.request[pos].emisor, request.emisor) == 0) && (strcmp(requestlist.request[pos].receptor, request.receptor) == 0)){
+		if ((strcmp(requestlist.request[pos].emisor, request.emisor) == 0) && (strcmp(requestlist.request[pos].receptor, request.receptor) == 0) && requestlist.request[pos].state == PENDINGFRIEND){
 			//printf("Peticion encontrada de %s a %s \n", requestlist.request[i].emisor, requestlist.request[i].receptor);			
 			//Marcamos la solicitud como aceptada
 			requestlist.request[pos].state = ACEPTEDFRIEND;
@@ -1098,12 +1112,39 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 
 	//printf("---##### TRACE ims__deleteUser #####---\n");
 
-	int pos;
+	int pos, posF, posAmigo, posUser;
+	int i;
 	// Comprobamos que el usuario existe
 	if((pos = checkUsers(user)) >= 0) {
+		
 		userlist.users[pos].state = -1;
-		(*result) = 0;
 		printf("Usuario %s eliminado\n", userlist.users[pos].name);
+
+		/* Me borro de la lista de mis amigos */
+		for (i = 0; i < userlist.users[pos].fList.numfriends; i++)
+		{
+			/* Busco la posicion del amigo en la lista de usuarios */
+			posF = checkUsers(userlist.users[pos].fList.listfriends[i].friends);
+
+			/*Busco las posiciones dentro de las lista de amigos */
+			posUser = checkFriend(userlist.users[pos].fList.listfriends[i].friends, user);
+			posAmigo = checkFriend(user, userlist.users[pos].fList.listfriends[i].friends);
+
+			if(posUser != -1 && posAmigo != -1) {
+
+				/* Marcamos al amigo como eliminado */
+				userlist.users[posF].fList.listfriends[posAmigo].state = DELFRIEND;
+				userlist.users[pos].fList.listfriends[posUser].state = DELFRIEND;
+
+				/* decrementamos el numero de amigos */
+				userlist.users[posF].fList.numfriends--;
+			}
+
+		}
+
+		userlist.users[pos].fList.numfriends = 0;
+
+		(*result) = 0;
 	}
 	else {
 		(*result) = -1;
@@ -1124,7 +1165,7 @@ int ims__reactivate(struct soap *soap, char * user, int * result) {
 	int pos;
 	// Comprobamos que el usuario existe
 	if((pos = checkUsers(user)) >= 0) {
-		userlist.users[pos].state = 0;
+		userlist.users[pos].state = ONLINE;
 		(*result) = 0;
 		printf("Usuario %s reactivado\n", userlist.users[pos].name);
 	}

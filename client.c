@@ -175,8 +175,6 @@ int gestorMenu(int op) {
 	return status;	
 }
 
-
-
 void listarDatos() {
 	int res;
 	soap_call_ims__datos (&soap, serverURL, "",&res);
@@ -326,7 +324,6 @@ void logout(char *user) {
 
 
 /*########### TRATAMIENTO DE AMIGOS ###########*/
-
 void listFriends(char *user){
 	
 	int res, i;
@@ -346,7 +343,7 @@ void listFriends(char *user){
 
   		for(i=0; i<friends.numfriends; i++) {
   			//if(friends.listfriends[i].state != -1)
-				printf("- %s \n", friends.listfriends[i].friends);
+			printf("- %s \n", friends.listfriends[i].friends);
 		}
   	}
 }
@@ -413,9 +410,9 @@ void listRequest(char *user){
 	int res, i, value,salir=0;
 	char op[1];
 	char opcion[1];
-	struct RequestList requestlist;
+	struct RequestList lRequest;
 
-	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &requestlist);
+	soap_call_ims__listFriendRequest (&soap, serverURL, "", user, &lRequest);
 
 	// Check for errors...
   	if (soap.error) {
@@ -423,23 +420,23 @@ void listRequest(char *user){
 		exit(1);
   	}
 
-  	if(requestlist.result == 0) {
+  	if(lRequest.result == 0) {
 
-  		printf("\nNumero de peticiones %d:\n", requestlist.numrequest);
+  		printf("\nNumero de peticiones %d:\n", lRequest.numrequest);
 
-  		for(i=0; i<requestlist.numrequest; i++) {
+  		for(i=0; i<lRequest.numrequest; i++) {
 
-  			if(requestlist.request[i].state == DELFRIEND)
-				printf(" (%d)- %s : ELIMINADO\n", i ,requestlist.request[i].emisor);
-			else if(requestlist.request[i].state == ACEPTEDFRIEND)
-				printf(" (%d)- %s : ACEPTADO\n", i ,requestlist.request[i].emisor);
-			else if(requestlist.request[i].state == REJECTED)
-				printf(" (%d)- %s : RECHAZADO\n", i ,requestlist.request[i].emisor);
-			else if(requestlist.request[i].state == PENDINGFRIEND)
-				printf(" (%d)- %s : PENDIENTE\n", i ,requestlist.request[i].emisor);
+  			if(lRequest.request[i].state == DELFRIEND)
+				printf(" (%d)- %s : ELIMINADO\n", i ,lRequest.request[i].emisor);
+			else if(lRequest.request[i].state == ACEPTEDFRIEND)
+				printf(" (%d)- %s : ACEPTADO\n", i ,lRequest.request[i].emisor);
+			else if(lRequest.request[i].state == REJECTED)
+				printf(" (%d)- %s : RECHAZADO\n", i ,lRequest.request[i].emisor);
+			else if(lRequest.request[i].state == PENDINGFRIEND)
+				printf(" (%d)- %s : PENDIENTE\n", i ,lRequest.request[i].emisor);
 		}
 
-		if(requestlist.numrequest > 0) {
+		if(lRequest.numrequest > 0) {
 			//Ahora gestionamos el tema de aceptarlas
 		  	printf("\nIntroduce el número de la petición que quieres tratar o pusla (s) para salir: ");
 		  	scanf("%s", opcion);
@@ -457,9 +454,9 @@ void listRequest(char *user){
 
 				do {
 				
-					if(strcmp(op, "a") || strcmp(op, "A")){
+					if(!strcmp(op, "a") || !strcmp(op, "A")){
 						//Enviamos la petición al servidor para que lo acepte:
-						soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+						soap_call_ims__aceptRequest (&soap, serverURL, "", user, lRequest.request[value], &res);
 
 						if(soap.error) {
 						  soap_print_fault(&soap, stderr); 
@@ -468,9 +465,9 @@ void listRequest(char *user){
 
 						salir = 1;
 					}
-					else if (strcmp(op, "r") || strcmp(op, "R")){
+					else if (!strcmp(op, "r") || !strcmp(op, "R")){
 
-						soap_call_ims__rejectRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
+						soap_call_ims__rejectRequest (&soap, serverURL, "", user, lRequest.request[value], &res);
 
 						if (soap.error) {
 						  soap_print_fault(&soap, stderr); 
@@ -501,7 +498,7 @@ void newMessage(char *user){
 	int res;
 	char receptor[16];
 	char message[280];
-	struct Message msg;
+	struct Message myMessage;
 
 	printf("Escribe el nombre del receptor del mensaje: ");
 	scanf("%s", receptor);
@@ -511,15 +508,15 @@ void newMessage(char *user){
 	//fgets(message, 280, stdin);
 
 	// Guardo el emisor en la estructura
-	strcpy(msg.emisor, user);
+	strcpy(myMessage.emisor, user);
 
 	// Guardo el receptor en la estructura
-	strcpy(msg.receptor, receptor);
+	strcpy(myMessage.receptor, receptor);
 
 	// Guardo el mensaje en la estructura
-	strcpy(msg.msg, message);
+	strcpy(myMessage.msg, message);
 
-	soap_call_ims__sendMessage (&soap, serverURL, "", msg, &res);
+	soap_call_ims__sendMessage (&soap, serverURL, "", myMessage, &res);
 
 	// Check for errors...
   	if (soap.error) {
@@ -539,14 +536,14 @@ void newMessage(char *user){
   	}
 }
 
-void listMessages(char *user, int option) {
+void listMessages(char *user, int state) {
 
-	struct MessageList mList;
+	struct MessageList myListMessage;
 	int i;
 	char * estado;
 
 
-	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &option, &mList);
+	soap_call_ims__receiveMessage (&soap, serverURL, "", user, &state, &myListMessage);
 
 	// Check for errors...
   	if (soap.error) {
@@ -555,30 +552,30 @@ void listMessages(char *user, int option) {
   	}
 
   	/* Muestro los mensajes del usuario */
-  	if(mList.result == 0) {
+  	if(myListMessage.result == 0) {
 
- 		if(option == RECEIVE) {
-	  		printf("Tienes %d mensajes recibidos:\n\n", mList.nummessages);
-			for(i = 0; i < mList.nummessages; i++) {
+ 		if(state == RECEIVE) {
+	  		printf("Tienes %d mensajes recibidos:\n\n", myListMessage.nummessages);
+			for(i = 0; i < myListMessage.nummessages; i++) {
 				printf("-------------------------------\n");
-				printf("De: %s \n", mList.messages[i].emisor);
-				printf("Mensaje: %s \n", mList.messages[i].msg);
+				printf("De: %s \n", myListMessage.messages[i].emisor);
+				printf("Mensaje: %s \n", myListMessage.messages[i].msg);
 				printf("-------------------------------\n");
 			}
 		}
-		if(option == SEND) {
-	  		printf("Tienes %d mensajes enviados:\n\n", mList.nummessages);
-			for(i = 0; i < mList.nummessages; i++) {
+		if(state == SEND) {
+	  		printf("Tienes %d mensajes enviados:\n\n", myListMessage.nummessages);
+			for(i = 0; i < myListMessage.nummessages; i++) {
 
 				printf("-------------------------------\n");
-				printf("Para: %s \n", mList.messages[i].emisor);
-				printf("Mensaje: %s \n", mList.messages[i].msg);
-				if(mList.messages[i].state == RECEIVE)
+				printf("Para: %s \n", myListMessage.messages[i].receptor);
+				printf("Mensaje: %s \n", myListMessage.messages[i].msg);
+				if(myListMessage.messages[i].state == RECEIVE)
 					printf("Estado: %s \n", "Recibido");
-				else if(mList.messages[i].state == READ)
+				else if(myListMessage.messages[i].state == READ)
 					printf("Estado: %s \n", "Leido");
 
-				printf("(%d)\n", mList.messages[i].state);
+				printf("(%d)\n", myListMessage.messages[i].state);
 				printf("-------------------------------\n");
 			}
 		}	
