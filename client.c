@@ -41,6 +41,7 @@ void listRequest(char *user);
 void newMessage();
 void listMessages(char *user, int option);
 void reactivateUser(char *user);
+void listarDatos();
 
 
 
@@ -97,6 +98,7 @@ int menu(){
 	printf("\n#############################################\n");
 	printf("#######  %s, selecciona una opción    #####\n" , conectedUser);
 	printf("#############################################\n");
+	printf("|| 0) Listar datos                         ||\n");
 	printf("|| 1) Ver mensajes recibidos               ||\n");
 	printf("|| 2) Ver mensajes enviados                ||\n");
 	printf("|| 3) Enviar un mensaje                    ||\n");	
@@ -123,12 +125,13 @@ int gestorMenu(int op) {
 	int *res;
 	
 	switch(op) {
-		/*case 1: // Dar de alta usuario
-			printf("Introduzca nombre de usuario: ");
+		case 0: // Dar de alta usuario
+			/*printf("Introduzca nombre de usuario: ");
 			scanf("%s", user);		
 			newUser(user);
-			printf("\n");
-			break; */	
+			printf("\n");*/
+			listarDatos();
+			break;	
 		case 1: //Ver mensajes enviados
 			listMessages(conectedUser, RECEIVE);
 			break;
@@ -170,6 +173,13 @@ int gestorMenu(int op) {
 	}
 
 	return status;	
+}
+
+
+
+void listarDatos() {
+	int res;
+	soap_call_ims__datos (&soap, serverURL, "",&res);
 }
 
 
@@ -451,7 +461,7 @@ void listRequest(char *user){
 						//Enviamos la petición al servidor para que lo acepte:
 						soap_call_ims__aceptRequest (&soap, serverURL, "", user, requestlist.request[value], &res);
 
-						if (soap.error) {
+						if(soap.error) {
 						  soap_print_fault(&soap, stderr); 
 						  exit(1);
 						}

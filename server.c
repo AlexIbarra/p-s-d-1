@@ -524,6 +524,67 @@ void *process_request(void *soap) {
 
 /*###########-- FUNCIONES IMS --############*/
 
+int ims__datos (struct soap *soap, int * result) {
+
+	int i,j;
+
+	printf("\n\n----------------------------------------------------\n");
+	printf("====>      Listando Estructura Usuarios       <====\n");
+
+	for(i=0; i<userlist.numusers; i++) {
+
+		if(userlist.users[i].state == ONLINE)
+			printf("Usuario: '%s'  Estado: 'Conectado'\n",userlist.users[i].name);
+		else if(userlist.users[i].state == OFFLINE)
+			printf("Usuario: '%s'  Estado: 'Desconectado'\n",userlist.users[i].name);
+		else if(userlist.users[i].state == DELETED)
+			printf("Usuario: '%s'  Estado: 'Eliminado'\n",userlist.users[i].name);
+
+		printf("Amigos: (%d)\n", userlist.users[i].fList.numfriends);
+
+		for (j = 0; j < userlist.users[i].fList.numfriends; j++) {
+			printf("    -%s\n", userlist.users[i].fList.listfriends[j].friends);
+		}
+
+		printf("\n");
+	}
+
+	printf("\n");
+
+	printf("====>      Listando Estructura Peticiones     <====\n");
+
+	for(i=0; i<requestlist.numrequest; i++) {
+
+		if(requestlist.request[i].state == PENDINGFRIEND)
+			printf("Emisor: '%s'   Receptor: '%s'   Estado: 'Pendiente'\n",requestlist.request[i].emisor, requestlist.request[i].receptor);
+		else if(requestlist.request[i].state == ACEPTEDFRIEND)
+			printf("Emisor: '%s'   Receptor: '%s'   Estado: 'Aceptada'\n",requestlist.request[i].emisor, requestlist.request[i].receptor);
+		else if(requestlist.request[i].state == REJECTED)
+			printf("Emisor: '%s'   Receptor: '%s'   Estado: 'Rechazada'\n",requestlist.request[i].emisor, requestlist.request[i].receptor);
+
+		printf("\n");
+	}
+
+	printf("\n");
+
+	printf("====>      Listando Estructura Mensajes       <====\n");
+
+	for(i=0; i<messagelist.nummessages; i++) {
+
+		if(messagelist.messages[i].state == RECEIVE)
+			printf("Emisor: '%s'   Receptor: '%s'   Estado: 'Recibido'\n",messagelist.messages[i].emisor, messagelist.messages[i].receptor);		
+		else if(messagelist.messages[i].state == READ)
+			printf("Emisor: '%s'   Receptor: '%s'   Estado: 'Leido'\n",messagelist.messages[i].emisor, messagelist.messages[i].receptor);		
+		printf("Mensaje: '%s'\n", messagelist.messages[i].msg);
+
+		printf("\n");
+	}
+
+	(*result) = 0;
+
+	printf("\n----------------------------------------------------\n\n");
+}
+
 
 
 /*################### MESSAGES ######################*/
@@ -637,7 +698,7 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 
 	
 	//printf("---##### TRACE ims__newFriend #####---\n");
-	printf("El usuario %s ha envíado una solicitud de amistad a %s", user, userfriend);
+	printf("El usuario %s ha envíado una solicitud de amistad a %s\n", user, userfriend);
 	int numfriends;
 	int posF;
 	int posP;
@@ -841,41 +902,37 @@ int ims__aceptRequest(struct soap *soap, char * user, struct Request request, in
 
 	//Lo primero es buscar la petición en la lista
 	int i = 0;
-	int pos;
+	int pos=0;
 	int posAux;
-	int encontrado = -1;
+	int encontrado = 0;
 
-	while (i < requestlist.numrequest && encontrado == -1){
-		if ((strcmp(requestlist.request[i].emisor, request.emisor) == 0) && (strcmp(requestlist.request[i].receptor, request.receptor) == 0)){
-			//printf("Peticion encontrada de %s a %s \n", requestlist.request[i].emisor, requestlist.request[i].receptor);
-			encontrado = 0;
-			pos = i;
+	while (pos < requestlist.numrequest && !encontrado) {
+
+		if ((strcmp(requestlist.request[pos].emisor, request.emisor) == 0) && (strcmp(requestlist.request[pos].receptor, request.receptor) == 0)){
+			//printf("Peticion encontrada de %s a %s \n", requestlist.request[i].emisor, requestlist.request[i].receptor);			
+			//Marcamos la solicitud como aceptada
+			requestlist.request[pos].state = ACEPTEDFRIEND;
+
+			//* Añado en la lista de amigos del emisor de la peticion */
+			posAux = checkUsers(requestlist.request[pos].emisor);
+			strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].receptor);
+			userlist.users[posAux].fList.numfriends ++;
+			printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].emisor);		
+			
+			//* Añado en la lista de amigos del receptor de la peticion */
+			posAux = checkUsers(requestlist.request[pos].receptor);
+			strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].emisor);
+			userlist.users[posAux].fList.numfriends ++;
+			printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].receptor);
+			encontrado = 1;
+			(*result) = 0;
 		}
-		i++;
+		pos++;
 	}
 
-	//Ahora que tenemos encontrada la posicón procedemos a marcarla como aceptada (1) y modificar las estructuras de usuario de ambos
 
-	if(encontrado == -1)
+	if(!encontrado)
 		(*result) = -1;
-	else {
-		//Marcamos la solicitud como aceptada
-		requestlist.request[pos].state = ACEPTEDFRIEND;
-
-		//Añadimos al usuario emisor como amigo del receptor.
-		posAux = checkUsers(requestlist.request[pos].emisor);
-		strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].receptor);
-		userlist.users[posAux].fList.numfriends ++;
-		printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].receptor);		
-		
-		//Y ahora viceversa
-		posAux = checkUsers(requestlist.request[pos].receptor);
-		strcpy(userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends].friends, requestlist.request[pos].emisor);
-		userlist.users[posAux].fList.numfriends ++;
-		printf("Añadido %s como amigo de %s\n", userlist.users[posAux].fList.listfriends[userlist.users[posAux].fList.numfriends-1].friends, requestlist.request[pos].emisor);
-		
-		(*result) = 0;
-	}
 
 	//printf("---###############################---\n");
 
@@ -888,12 +945,14 @@ int ims__rejectRequest(struct soap *soap, char * user, struct Request request, i
 	
 	//Lo primero es buscar la petición en la lista
 	int i = 0;
-	int pos;
-	int encontrado = -1;
-	while (i < requestlist.numrequest && encontrado == -1){
+	int encontrado = 0;
+	while (i < requestlist.numrequest && !encontrado) {
+
 		if ((strcmp(requestlist.request[i].emisor, request.emisor) == 0) && (strcmp(requestlist.request[i].receptor, request.receptor) == 0)){
-			encontrado = 0;
-			pos = i;
+			encontrado = 1;
+			printf("%s ha rechazado una petición de amistad de %s\n", requestlist.request[i].receptor, requestlist.request[i].emisor);
+			requestlist.request[i].state = REJECTED;
+			(*result) = 0;
 		}
 		i++;
 	}
@@ -901,13 +960,8 @@ int ims__rejectRequest(struct soap *soap, char * user, struct Request request, i
 
 
 	//Ahora que tenemos encontrada la posicón procedemos a marcarla como rechazada (-1)
-	if (encontrado == -1)
+	if (!encontrado)
 		(*result)= -1;
-	else{
-		printf("%s ha rechazado una petición de amistad de %s", request.receptor, request.emisor);
-		requestlist.request[pos].state = -1;
-		(*result) = 0;
-	}
 
 	//printf("---###############################---\n");
 

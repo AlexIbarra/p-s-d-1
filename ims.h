@@ -60,6 +60,9 @@ struct MessageList {
 };
 
 
+int ims__datos (int * result);
+
+
 /*########## MENSAJES ##########*/
 int ims__sendMessage (struct Message myMessage, int * result);
 int ims__receiveMessage (char * user, int * state, struct MessageList * myListMessage);
