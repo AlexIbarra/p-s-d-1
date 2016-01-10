@@ -326,7 +326,7 @@ void logout(char *user) {
 /*########### TRATAMIENTO DE AMIGOS ###########*/
 void listFriends(char *user){
 	
-	int res, i;
+	int res, i, cont=0;
 	struct ListFriends friends;
 
 	soap_call_ims__listFriends (&soap, serverURL, "", user, &friends);
@@ -338,12 +338,16 @@ void listFriends(char *user){
   	}
 
   	if(friends.result == 0) {
+  		for(i=0; i<friends.numfriends; i++) {
+  			if(friends.listfriends[i].state != DELFRIEND)
+				cont++;
+		}
 
-  		printf("Numero de amigos %d\n", friends.numfriends);
+  		printf("Numero de amigos %d\n", cont);
 
   		for(i=0; i<friends.numfriends; i++) {
-  			//if(friends.listfriends[i].state != -1)
-			printf("- %s \n", friends.listfriends[i].friends);
+  			if(friends.listfriends[i].state != DELFRIEND)
+				printf("- %s \n", friends.listfriends[i].friends);
 		}
   	}
 }

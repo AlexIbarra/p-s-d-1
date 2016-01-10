@@ -426,8 +426,6 @@ int checkPetition(char *emisor, char *receptor) {
 
 	//	printf("\t---##### TRACE checkPetition #####---\n");
 
-	printf("\t");
-
 	int i = 0;
 	int tmp = -1;
 	int encontrado=0;
@@ -547,7 +545,8 @@ int ims__datos (struct soap *soap, int * result) {
 		printf("Amigos: (%d)\n", userlist.users[i].fList.numfriends);
 
 		for (j = 0; j < userlist.users[i].fList.numfriends; j++) {
-			printf("    -%s\n", userlist.users[i].fList.listfriends[j].friends);
+			if(userlist.users[i].fList.listfriends[j].state != DELFRIEND)
+				printf("    -%s\n", userlist.users[i].fList.listfriends[j].friends);
 		}
 
 		printf("\n");
@@ -767,9 +766,26 @@ int ims__newFriend (struct soap *soap, char * user, char * userfriend, int * res
 				}
 				
 			}	
-			/* Si ya esta añadido, informo al cliente */
-			else {
+			/* Si esta en la lista de amigos pero no esta eliminado*/
+			else if(posF != -1 && userlist.users[pos].fList.listfriends[posF].state != DELFRIEND){
 				(*result) = -1;
+			}
+			/* Esta en la lista de amigos pero con estado ELIMINADO */
+			else {
+				/* No caben mas amigos al usuario */
+				if(userlist.users[pos].fList.numfriends == 50) {
+					(*result) = -3;
+				}
+				else if(userlist.users[posuser].fList.numfriends == 50) {
+					(*result) = -4;
+				}
+				else {
+					strcpy(requestlist.request[requestlist.numrequest].emisor, user);
+					strcpy(requestlist.request[requestlist.numrequest].receptor, userfriend);
+					requestlist.numrequest ++;
+
+					(*result) = 0;
+				}
 			}
 		}
 		else{
@@ -788,7 +804,7 @@ int ims__deleteFriend (struct soap *soap, char * user, char * userfriend, int * 
 
 
 	//printf("---##### TRACE ims__deleteFriend #####---\n");
-	printf("Los usuarios %s y %s ya no son amigos\n", user, userfriend);
+	
 	int posF, pos, posFf;
 	/* Compruebo que el usuario exista */
 	int posAmigo = checkUsers(userfriend);
@@ -802,16 +818,25 @@ int ims__deleteFriend (struct soap *soap, char * user, char * userfriend, int * 
 		posF = checkFriend(user, userfriend);
 		posFf = checkFriend(userfriend, user);
 
+		printf("Encontrado %s\n", userlist.users[pos].name);
+		printf("Encontrado %s\n", userlist.users[posAmigo].name);
+
 		if(posF != -1) {
 
 			/* Marcamos al amigo como eliminado */
 			userlist.users[posAmigo].fList.listfriends[posFf].state = DELFRIEND;
 			userlist.users[pos].fList.listfriends[posF].state = DELFRIEND;
 
-			/* decrementamos el numero de amigos */
-			userlist.users[pos].fList.numfriends--;
-			userlist.users[posAmigo].fList.numfriends--;
+			printf("Eliminado %s(%d) de la lista de %s\n", userlist.users[posAmigo].fList.listfriends[posFf].friends,
+				userlist.users[posAmigo].fList.listfriends[posFf].state, userlist.users[posAmigo].name);
+			printf("Eliminado %s(%d) de la lista de %s\n", userlist.users[pos].fList.listfriends[posF].friends,
+				userlist.users[pos].fList.listfriends[posF].state, userlist.users[pos].name);
 
+			/* decrementamos el numero de amigos */
+			//userlist.users[pos].fList.numfriends--;
+			//userlist.users[posAmigo].fList.numfriends--;
+
+			printf("Los usuarios %s y %s ya no son amigos\n", user, userfriend);
 			//printf("Eliminado amigo %s, estado %d\n", userlist.users[pos].fList.listfriends[posF].friends, userlist.users[pos].fList.listfriends[posF].state);
 		}
 		/* No es amigo */
@@ -841,6 +866,7 @@ int ims__listFriends (struct soap *soap, char * user, struct ListFriends * frien
 
 		for(i=0; i<userlist.users[pos].fList.numfriends; i++) {
 			strcpy((*friends).listfriends[i].friends, userlist.users[pos].fList.listfriends[i].friends);
+			(*friends).listfriends[i].state = userlist.users[pos].fList.listfriends[i].state;
 		}
 
 		(*friends).numfriends = userlist.users[pos].fList.numfriends;

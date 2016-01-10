@@ -18,7 +18,7 @@ struct Friend {
 };
 
 struct ListFriends {
-	struct Friend listfriends[50]; 	// lista de amigos (50 max)
+	struct Friend listfriends[100]; 	// lista de amigos (50 max)
 	int numfriends;					// numeros de amigos hasta el momento
 	int result;			// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
@@ -30,7 +30,7 @@ struct Request {
 };
 
 struct RequestList {
-	struct Request request[500];
+	struct Request request[1000];
 	int numrequest;
 	int result;	// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
@@ -42,7 +42,7 @@ struct User {
 };
 
 struct UsersList {
-	struct User users[100];
+	struct User users[200];
 	int numusers;
 };
 
@@ -54,7 +54,7 @@ struct Message {
 };
 
 struct MessageList {
-	struct Message messages[1000];
+	struct Message messages[5000];
 	int nummessages;
 	int result;	// resultado de las operaciones que se realicen sobre la estructura (para informar al cliente)
 };
