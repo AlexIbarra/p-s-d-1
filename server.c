@@ -122,8 +122,6 @@ int main(int argc, char **argv) {
 		return 0; 
   	}
 
-
- //  return 0;
 }
 
 
@@ -188,8 +186,6 @@ void guardarUsuarios() {
 	}
 	
 
-	//fwrite(&userlist.users, sizeof(struct User), userlist.numusers, fd);
-
 	fclose(fd);
 
 	//printf("\t---###############################---\n");
@@ -249,8 +245,6 @@ void guardarMensajes() {
 	//	printf("\tGuardando emisor %s, receptor %s, mensaje %s, estado %d\n",messagelist.messages[i].emisor, messagelist.messages[i].receptor, messagelist.messages[i].msg, messagelist.messages[i].state);
 		fwrite(&messagelist.messages[i], sizeof(struct Message), 1, fd);	
 	}
-
-	//fwrite(&messagelist.messages, sizeof(struct Message), messagelist.nummessages, fd);
 
 	fclose(fd);
 
@@ -332,13 +326,6 @@ void salir(int senal){
 		case SIGINT:
 			printf("\nCerrando servidor...\n");
 
-			/*for(i = 0; i< userlist.contador ; i++){
-				if(userlist.listaUsuarios[i].estado == ONLINE){
-					userlist.listaUsuarios[i].estado = OFFLINE;
-				}
-			}
-
-			guardarListaUsuarios();*/
 			disconectUser();
 			guardarUsuarios();
 			guardarMensajes();
@@ -545,8 +532,8 @@ int ims__datos (struct soap *soap, int * result) {
 		printf("Amigos: (%d)\n", userlist.users[i].fList.numfriends);
 
 		for (j = 0; j < userlist.users[i].fList.numfriends; j++) {
-			if(userlist.users[i].fList.listfriends[j].state != DELFRIEND)
-				printf("    -%s\n", userlist.users[i].fList.listfriends[j].friends);
+			//if(userlist.users[i].fList.listfriends[j].state != DELFRIEND)
+				printf("    -%s (%d)\n", userlist.users[i].fList.listfriends[j].friends, userlist.users[i].fList.listfriends[j].state);
 		}
 
 		printf("\n");
@@ -1146,6 +1133,8 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 		userlist.users[pos].state = -1;
 		printf("Usuario %s eliminado\n", userlist.users[pos].name);
 
+		printf("Numero de amigos a borrar %d\n", userlist.users[pos].fList.numfriends);
+
 		/* Me borro de la lista de mis amigos */
 		for (i = 0; i < userlist.users[pos].fList.numfriends; i++)
 		{
@@ -1158,9 +1147,15 @@ int ims__deleteUser (struct soap *soap, char * user, int * result) {
 
 			if(posUser != -1 && posAmigo != -1) {
 
-				/* Marcamos al amigo como eliminado */
+				/* Marcamos al amigo como eliminado */				
 				userlist.users[posF].fList.listfriends[posAmigo].state = DELFRIEND;
 				userlist.users[pos].fList.listfriends[posUser].state = DELFRIEND;
+
+				printf("Borrado %s de la lista de %s : (%d)\n", userlist.users[posF].fList.listfriends[posAmigo].friends,
+					userlist.users[pos].fList.listfriends[posUser].friends, userlist.users[posF].fList.listfriends[posAmigo].state);
+
+				printf("Borrado %s de la lista de %s : (%d)\n", userlist.users[pos].fList.listfriends[posUser].friends,
+					userlist.users[posF].fList.listfriends[posAmigo].friends, userlist.users[pos].fList.listfriends[posUser].state);
 
 				/* decrementamos el numero de amigos */
 				userlist.users[posF].fList.numfriends--;
@@ -1188,7 +1183,54 @@ int ims__reactivate(struct soap *soap, char * user, int * result) {
 
 	printf("\t\n");
 
-	int pos;
+	int pos, posF, posAmigo, i, j;
+	int encontrado = 0;
+
+	
+	// Comprobamos que el usuario existe
+	// if((pos = checkUsers(user)) >= 0) {
+		
+	// 	userlist.users[pos].state = ONLINE;
+		
+	// 	printf("Usuario %s reactivado\n", userlist.users[pos].name);
+			
+	// 	/* Me borro de la lista de mis amigos */
+	// 	for (i = 0; i < userlist.users[pos].fList.numfriends; i++)
+	// 	{
+			
+	// 		/* Busco la posicion del amigo en la lista de usuarios */
+	// 		posF = checkUsers(userlist.users[pos].fList.listfriends[i].friends);
+			
+	// 		/* Si el usuario existe y no ha sido dado de baja */
+	// 		if(posF != -1 && userlist.users[posF].state != DELETED) {
+			
+	// 			/* Vuelvo a activar a mis amigos de la lista */
+	// 			userlist.users[pos].fList.listfriends[i].state = ACEPTEDFRIEND;
+				
+	// 			j=0;
+				
+	// 			/* Recorro toda la lista de mi amigo buscando mi nombre */
+	// 			while(j<userlist.users[posF].fList.numfriends && encontrado==0) {
+				
+	// 				printf("%s\n", userlist.users[posF].fList.listfriends[j].friends);
+					
+	// 				/* Cuando me encuentre en la lista */
+	// 				if(!strcmp(userlist.users[posF].fList.listfriends[j].friends, user)) {
+	// 					printf("Encontrado %s en la lista de %s\n",userlist.users[pos].fList.listfriends[j].friends, userlist.users[posF].name);
+	// 					userlist.users[pos].fList.listfriends[j].state = ACEPTEDFRIEND;
+	// 					encontrado = 1;
+	// 				}
+	// 				j++;
+	// 			}
+			
+	// 		}
+
+	// 	}
+				
+	// 	(*result) = 0;	
+		
+	// }
+
 	// Comprobamos que el usuario existe
 	if((pos = checkUsers(user)) >= 0) {
 		userlist.users[pos].state = ONLINE;

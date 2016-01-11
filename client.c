@@ -27,7 +27,7 @@ struct soap soap;
 char conectedUser[IMS_MAX_NAME_SIZE];
 char addFriend[IMS_MAX_NAME_SIZE];
 
-
+void salir(int senal);
 int menu();
 int gestorMenu(int op);
 void newUser(char *user);
@@ -56,6 +56,8 @@ int main(int argc, char **argv){
 	int res;
 	int opcion, status=1;
   
+  	// Asigno el handler para el Ctrl + C
+   	signal(SIGINT,salir);
   
 	// Usage
   	if (argc != 3) {
@@ -98,7 +100,7 @@ int menu(){
 	printf("\n#############################################\n");
 	printf("#######  %s, selecciona una opción    #####\n" , conectedUser);
 	printf("#############################################\n");
-	printf("|| 0) Listar datos                         ||\n");
+	//printf("|| 0) Listar datos                         ||\n");
 	printf("|| 1) Ver mensajes recibidos               ||\n");
 	printf("|| 2) Ver mensajes enviados                ||\n");
 	printf("|| 3) Enviar un mensaje                    ||\n");	
@@ -125,13 +127,13 @@ int gestorMenu(int op) {
 	int *res;
 	
 	switch(op) {
-		case 0: // Dar de alta usuario
+		//case 0: // Dar de alta usuario
 			/*printf("Introduzca nombre de usuario: ");
 			scanf("%s", user);		
 			newUser(user);
 			printf("\n");*/
-			listarDatos();
-			break;	
+		//	listarDatos();
+		//	break;	
 		case 1: //Ver mensajes enviados
 			listMessages(conectedUser, RECEIVE);
 			break;
@@ -178,6 +180,22 @@ int gestorMenu(int op) {
 void listarDatos() {
 	int res;
 	soap_call_ims__datos (&soap, serverURL, "",&res);
+}
+
+void salir(int senal){
+
+
+	int i;
+	fflush (stdout);
+	switch(senal){
+		case SIGINT:
+			printf("\nCerrando cliente...\n");
+			logout(conectedUser);
+			printf("Cliente cerrado.\n");
+			exit(1);
+		break;
+	}
+
 }
 
 
@@ -508,8 +526,6 @@ void newMessage(char *user){
 	scanf("%s", receptor);
 	printf("Escribe el mensaje (Max 280 caracteres): ");
 	scanf (" %[^\n]", message);
-	fflush(stdin);
-	//fgets(message, 280, stdin);
 
 	// Guardo el emisor en la estructura
 	strcpy(myMessage.emisor, user);
